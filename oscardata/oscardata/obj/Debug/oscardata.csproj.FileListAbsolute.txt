@@ -1,0 +1,10 @@
+E:\funk\gnuradio\oscardata\oscardata\bin\Debug\oscardata.exe.config
+E:\funk\gnuradio\oscardata\oscardata\bin\Debug\oscardata.exe
+E:\funk\gnuradio\oscardata\oscardata\bin\Debug\oscardata.pdb
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.Form1.resources
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.Properties.Resources.resources
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.csproj.GenerateResource.Cache
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.csproj.CoreCompileInputs.cache
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.exe
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.pdb
+E:\funk\gnuradio\oscardata\oscardata\obj\Debug\oscardata.csprojAssemblyReference.cache
