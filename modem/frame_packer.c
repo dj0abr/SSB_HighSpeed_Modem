@@ -138,7 +138,7 @@ uint8_t *Pack(uint8_t *payload, int type, int status, int *plen)
     }
 }*/
 
-#define MAXHEADERRS  0
+#define MAXHEADERRS  3
 
 /*
  * Header erros will not cause any data errors because the CRC will filter out
@@ -298,7 +298,7 @@ uint8_t *getPayload(uint8_t *rxb)
     int framenumrx = (frame.status & 0xc0)>>6;  // frame counter MSB
     framenumrx <<= 8;
     framenumrx += frame.counter_LSB;        // frame counter LSB 
-    //printf("Frame no.: %d\n",framenumrx);
+    
     if (lastframenum != framenumrx) rx_status |= 4;
     lastframenum = framenumrx;
     if (++lastframenum >= 1024) lastframenum = 0; // 1024 = 2^10 (10 bit frame number)
@@ -316,6 +316,8 @@ uint8_t *getPayload(uint8_t *rxb)
     payload[7] = 0;     // free for later use
     payload[8] = 0;
     payload[9] = 0;
+    
+    //printf("Frame no.: %d, type:%d, minfo:%d\n",framenumrx,payload[0],payload[3]);
     
     memcpy(payload+10,frame.payload,PAYLOADLEN);
     

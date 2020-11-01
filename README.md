@@ -2,7 +2,7 @@
 The purpose of this project is to transfer data (pictures...) via a 2,7kHz SSB channel on the narrow band transponder as fast as possible.
 
 # this is work in progress
-Version 0.1 is working on my linux PC and Odroid SBC.
+Version 0.2 is working on my linux PC, Odroid SBC and Raspberry 4 (3B+)
 
 # Prerequisites
 * LINUX Desktop PC ... working

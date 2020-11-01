@@ -59,7 +59,6 @@ int speedmode = 4;
 int bitsPerSymbol = 2;      // QPSK=2, 8PSK=3
 int constellationSize = 4;  // QPSK=4, 8PSK=8
 
-
 char localIP[]={"127.0.0.1"};
 char ownfilename[]={"qo100modem"};
 char myIP[20];
@@ -67,6 +66,9 @@ char appIP[20] = {0};
 int fixappIP = 0;
 int restart_modems = 0;
 int doNotLoadModems = 0;
+
+int caprate = 44100;
+int txinterpolfactor = 20;
 
 int main(int argc, char *argv[])
 {
@@ -99,7 +101,7 @@ char *modemip = NULL;
         }
     }
 
-    if(isRunning(ownfilename) == 1)
+    if(doNotLoadModems == 0 && isRunning(ownfilename) == 1)
         exit(0);
     
     install_signal_handler();
@@ -107,10 +109,11 @@ char *modemip = NULL;
     init_packer();
     initFEC();
     init_fft();
+    init_audio();
     
     // start udp RX to listen for broadcast search message from Application
     UdpRxInit(&BC_sock_AppToModem, UdpBCport_AppToModem, &bc_rxdata, &keeprunning);
-    
+        
     // start udp RX for data from application
     UdpRxInit(&DATA_sock_AppToModem, UdpDataPort_AppToModem, &appdata_rxdata, &keeprunning);
     
@@ -169,7 +172,6 @@ SPEEDRATE sr[9] = {
 
 void startModem()
 {
-char stx[512];
 char srx[512];
 
     if(speedmode >= 0 && speedmode <=5)
@@ -183,30 +185,24 @@ char srx[512];
         constellationSize = (1<<bitsPerSymbol); // QPSK=4, 8PSK=8
     }
     
+    caprate = sr[speedmode].audio;
+    txinterpolfactor = sr[speedmode].tx;
+    
     if(doNotLoadModems == 1) return;
 
     if(speedmode >= 0 && speedmode <=5)
-    {
-        sprintf(stx,"python3 qpsk_tx.py -r %d -s %d &",sr[speedmode].tx,sr[speedmode].audio);
         sprintf(srx,"python3 qpsk_rx.py -r %d -s %d &",sr[speedmode].rx,sr[speedmode].audio);
-    }
     else if(speedmode >= 6 && speedmode <=7)
-    {
-        sprintf(stx,"python3 tx_8psk.py -r %d -s %d &",sr[speedmode].tx,sr[speedmode].audio);
         sprintf(srx,"python3 rx_8psk.py -r %d -s %d &",sr[speedmode].rx,sr[speedmode].audio);
-    }
     else
     {
         printf("wrong modem number\n");
         exit(0);
     }
-    
-    // the TX modem needs the local IP address as a parameter -i ip
-    if(run_console_program(stx) == -1)
-    {
-        printf("cannot start TX modem\n");
-        exit(0);
-    }
+
+    // int TX audio and modulator
+    init_dsp();
+    init_audio();
 
     // the RX modem needs the app's IP address as a parameter -i ip
     if(run_console_program(srx) == -1)
@@ -354,13 +350,22 @@ void appdata_rxdata(uint8_t *pdata, int len, struct sockaddr_in* rxsock)
         int r = system("sudo shutdown now");
         exit(r);
     }
-
+    
     if(getSending() == 1) return;   // already sending (Array sending)
     
     if(minfo == 0)
     {
-        toGR_Preamble(); // first transmission of a data block, send preamble
-        toGR_sendData(pdata+2, type, minfo);
+        // this is the first frame of a larger file
+        // send it multiple times, like a preamble, to give the
+        // receiver some time for synchronisation
+        // duration: 3 seconds
+        // caprate: samples/s. This are symbols: caprate/txinterpolfactor
+        // and bits: symbols * bitsPerSymbol
+        // and bytes/second: bits/8 = (caprate/txinterpolfactor) * bitsPerSymbol / 8
+        // one frame has 258 bytes, so we need for 5s: 5* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
+        int numframespreamble = 3* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1;
+        for(int i=0; i<numframespreamble; i++)
+            toGR_sendData(pdata+2, type, minfo);
     }
     else if((len-2) < PAYLOADLEN)
     {
@@ -376,37 +381,15 @@ void appdata_rxdata(uint8_t *pdata, int len, struct sockaddr_in* rxsock)
     }
 }
 
-void toGR_Preamble()
-{
-    srand(123);
-    // send random data, rx can sync
-    uint8_t data[UDPBLOCKLEN];
-        
-    // 1byte 1,8ms (about 2ms)
-    int timeforframe = 2 * UDPBLOCKLEN; // 160 ms
-    int repeats = 8000 /timeforframe;   // for 8000ms = 8s 
-    
-    for(int i=0; i<repeats; i++)
-    {
-        for(int j=0; j<UDPBLOCKLEN; j++)
-            data[j] = rand();
-
-        sendUDP(localIP,UdpDataPort_toGR,data,UDPBLOCKLEN);
-        usleep(300000);
-    }
-}
-
 void toGR_sendData(uint8_t *data, int type, int status)
 {
     int len = 0;
     uint8_t *txdata = Pack(data,type,status,&len);
     
-    //printf("senddata %d\n",len);
+    //showbytestring((char *)"BERtx: ", txdata, len);
     
     if(txdata != NULL)
-    {
-        sendUDP(localIP,UdpDataPort_toGR,txdata,len);
-    }
+         sendToModulator(txdata,len);
 }
 
 #define SPEEDMEAN 3
@@ -469,7 +452,7 @@ void measure_speed(int len)
     meansumbytes = 0;
 }
 
-// called by UDP RX thread for data from GR
+// called by UDP RX thread for data from GnuRadio Receiver
 void GRdata_rxdata(uint8_t *pdata, int len, struct sockaddr_in* rxsock)
 {
     // raw symbols

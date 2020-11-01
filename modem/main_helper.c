@@ -37,6 +37,7 @@ int isRunning(char *prgname)
     return 0;
 }
 
+
 // signal handler
 void sighandler(int signum)
 {

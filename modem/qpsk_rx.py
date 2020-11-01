@@ -42,8 +42,8 @@ class qpsk_rx(gr.top_block):
         self.qpsk__constellation = qpsk__constellation = digital.constellation_rect([0.707+0.707j, -0.707+0.707j, -0.707-0.707j, 0.707-0.707j], [0, 1, 2, 3],
         4, 2, 2, 1, 1).base()
         self.qpsk__constellation.gen_soft_dec_lut(8)
-        self.outputsps = outputsps = 7
-        self.nfilts = nfilts = 32
+        self.outputsps = outputsps = 8
+        self.nfilts = nfilts = 15
         self.mixf = mixf = 1500
 
         ##################################################

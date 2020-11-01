@@ -28,6 +28,8 @@
 #include "frameformat.h"
 #include "main_helper.h"
 #include "udp.h"
+#include "bass.h"
+#include <liquid/liquid.h>
 
 #define jpg_tempfilename "rxdata.jpg"
 
@@ -45,7 +47,6 @@ int cfec_Reconstruct(uint8_t *darr, uint8_t *destination);
 uint8_t *Pack(uint8_t *payload, int type, int status, int *plen);
 void GetFEC(uint8_t *txblock, int len, uint8_t *destArray);
 void initFEC();
-void toGR_Preamble();
 void toGR_sendData(uint8_t *data, int type, int status);
 uint16_t *make_waterfall(uint8_t *pdata, int len, int *retlen);
 void init_fft();
@@ -62,12 +63,17 @@ void convertBytesToSyms_8PSK(uint8_t *bytes, uint8_t *syms, int bytenum);
 void rotate8PSKsyms(uint8_t *src, uint8_t *dst, int len);
 uint8_t * rotateBack8PSK(uint8_t *buf, int len, int rotations);
 void setSending(uint8_t onoff);
-void toGR_Preamble();
 int getSending();
 void doArraySend();
 int arraySend(uint8_t *data, int length, uint8_t type, char *filename);
 void shiftleft(uint8_t *data, int shiftnum, int len);
 void showbytestring16(char *title, uint16_t *data, int anz);
+int isTXRunning(char *prgname);
+int pb_fifo_freespace(int nolock);
+int init_audio();
+void sendToModulator(uint8_t *d, int len);
+void pb_write_fifo(float sample);
+int init_dsp();
 
 
 extern int keeprunning;
@@ -76,7 +82,8 @@ extern int speed;
 extern int speedmode;
 extern int bitsPerSymbol;
 extern int constellationSize;
-
+extern int caprate;
+extern int txinterpolfactor;
 
 /*
  * Constellation as produced by the GR Constellation Decoder:

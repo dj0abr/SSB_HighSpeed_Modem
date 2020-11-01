@@ -120,7 +120,12 @@ void doArraySend()
     {
         // send first frame
         printf("Start Array Send %d\n",getSending());
-        toGR_Preamble();
+
+        // preamble
+        int numframespreamble = 3* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1;
+        for(int i=0; i<numframespreamble; i++)
+            toGR_sendData(TXarray, txtype, filestat);
+        
         if(txlen <= PAYLOADLEN)
         {
             // we just need to send one frame
