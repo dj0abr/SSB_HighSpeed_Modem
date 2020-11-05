@@ -25,6 +25,7 @@ namespace oscardata
         public static Byte AutosendFile = 17;
         public static Byte AutosendFolder = 18;
         public static Byte Modem_shutdown = 19;
+        public static Byte ResetModem = 20;
 
         // frame sequence, modem needs that for i.e. sending a preamble
         public static Byte FirstFrame = 0;
@@ -52,6 +53,9 @@ namespace oscardata
         public static String RXimageStorage = "RXimages";
         public static String OSversion = "";
         public static int ostype = 0; // 0=Windows, 1=Linux
+        public static int GotAudioDevices = 0;
+        public static String[] AudioPBdevs;
+        public static String[] AudioCAPdevs;
 
         public static void setDatarate(int rate)
         {

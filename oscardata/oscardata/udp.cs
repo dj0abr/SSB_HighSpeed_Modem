@@ -12,9 +12,11 @@
 
 using System;
 using System.Collections;
+using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Windows.Forms.VisualStyles;
 
 namespace oscardata
 {
@@ -91,6 +93,13 @@ namespace oscardata
                         {
                             statics.ModemIP = RemoteEndpoint.Address.ToString();
                             searchtimeout = 0;
+                            // message b contains audio devices
+                            String s = statics.ByteArrayToString(b);
+                            String[] sa1 = s.Split(new char[] { '^' });
+                            statics.AudioPBdevs = sa1[0].Split(new char[] { '~' });
+                            statics.AudioCAPdevs = sa1[1].Split(new char[] { '~' });
+                            if(statics.GotAudioDevices == 0)
+                                statics.GotAudioDevices = 1;
                         }
 
                         // FFT data
@@ -108,10 +117,11 @@ namespace oscardata
                                 lastb[0] = b[i];
 
                                 // test if aligned
+                                int re = 0, im = 0;
                                 if (lastb[0] == 0 && lastb[1] == 0 && lastb[2] == 3 && lastb[3] == 0xe8)
                                 {
                                     // we are aligned to a re value
-                                    int re = lastb[4];
+                                    re = lastb[4];
                                     re <<= 8;
                                     re += lastb[5];
                                     re <<= 8;
@@ -119,23 +129,18 @@ namespace oscardata
                                     re <<= 8;
                                     re += lastb[7];
 
-                                    int im = lastb[8];
+                                    im = lastb[8];
                                     im <<= 8;
                                     im += lastb[9];
                                     im <<= 8;
                                     im += lastb[10];
                                     im <<= 8;
                                     im += lastb[11];
-
-                                    qpskitem q = new qpskitem();
-                                    q.re = re;
-                                    q.im = im;
-                                    uq_iq.Add(q);
                                 }
                                 else if (lastb[0] == 0xe8 && lastb[1] == 3 && lastb[2] == 0 && lastb[3] == 0)
                                 {
                                     // we are aligned to a re value
-                                    int re = lastb[7];
+                                    re = lastb[7];
                                     re <<= 8;
                                     re += lastb[6];
                                     re <<= 8;
@@ -143,24 +148,54 @@ namespace oscardata
                                     re <<= 8;
                                     re += lastb[4];
 
-                                    int im = lastb[11];
+                                    im = lastb[11];
                                     im <<= 8;
                                     im += lastb[10];
                                     im <<= 8;
                                     im += lastb[9];
                                     im <<= 8;
                                     im += lastb[8];
-
-                                    qpskitem q = new qpskitem();
-                                    q.re = re;
-                                    q.im = im;
-                                    uq_iq.Add(q);
                                 }
+
+                                drawBitmap(re, im);
                             }
                         }
                     }
                 }
                 catch { }
+            }
+        }
+
+        static int panelw = 75, panelh = 75;
+        static int maxdrawanz = 250;
+        static int drawanz = 0;
+        static Bitmap bm;
+        static void drawBitmap(int re, int im)
+        {
+            if (re == 0 && im == 0) return;
+            if (++drawanz >= maxdrawanz && uq_iq.Count() <= 1)
+            {
+                drawanz = 0;
+                uq_iq.Add(bm);
+                bm = new Bitmap(75, 75);
+            }
+            
+            using (Graphics gr = Graphics.FromImage(bm))
+            {
+                // re and im are in the range of +/- 2^24 (16777216)
+                // scale it to +/- 128
+                double fre = re;
+                double fim = im;
+
+                fre = fre * panelw / 2 / 16777216.0;
+                fim = fim * panelh / 2 / 16777216.0;
+
+                // scale it to the picture
+                int x = panelw / 2 + (int)fre;
+                int y = panelh / 2 + (int)fim;
+
+                int et = 1;
+                gr.FillEllipse(Brushes.Blue, x - et, y - et, et * 2, et * 2);
             }
         }
 
@@ -265,6 +300,19 @@ namespace oscardata
 
             return uq_iq.GetQPSKitem();
         }
+
+        public static Bitmap UdpBitmap()
+        {
+            if (uq_iq.Count() == 0) return null;
+
+            return uq_iq.GetBitmap();
+        }
+
+        public static bool IQavail()
+        {
+            if (uq_iq.Count() == 0) return false;
+            return true;
+        }
     }
 
     // this class is a thread safe queue wich is used
@@ -289,13 +337,32 @@ namespace oscardata
             }
         }
 
-        public Byte [] Getarr()
+        public void Add(Bitmap bm)
+        {
+            lock (myQ.SyncRoot)
+            {
+                myQ.Enqueue(bm);
+            }
+        }
+
+        public Bitmap GetBitmap()
+        {
+            Bitmap b;
+
+            lock (myQ.SyncRoot)
+            {
+                b = (Bitmap)myQ.Dequeue();
+            }
+            return b;
+        }
+
+        public Byte[] Getarr()
         {
             Byte[] b;
 
             lock (myQ.SyncRoot)
             {
-                b = (Byte [])myQ.Dequeue();
+                b = (Byte[])myQ.Dequeue();
             }
             return b;
         }

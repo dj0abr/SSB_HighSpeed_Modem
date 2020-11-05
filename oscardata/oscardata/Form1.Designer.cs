@@ -71,7 +71,14 @@
             this.bt_file_html = new System.Windows.Forms.Button();
             this.bt_file_ascii = new System.Windows.Forms.Button();
             this.tabPage5 = new System.Windows.Forms.TabPage();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.textBox2 = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.cb_audioCAP = new System.Windows.Forms.ComboBox();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cb_audioPB = new System.Windows.Forms.ComboBox();
+            this.bt_resetmodem = new System.Windows.Forms.Button();
+            this.tb_shutdown = new System.Windows.Forms.TextBox();
             this.bt_shutdown = new System.Windows.Forms.Button();
             this.cb_savegoodfiles = new System.Windows.Forms.CheckBox();
             this.cb_stampcall = new System.Windows.Forms.CheckBox();
@@ -80,6 +87,9 @@
             this.cb_speed = new System.Windows.Forms.ComboBox();
             this.label_speed = new System.Windows.Forms.Label();
             this.timer_searchmodem = new System.Windows.Forms.Timer(this.components);
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.groupBox3 = new System.Windows.Forms.GroupBox();
+            this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.statusStrip1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -89,6 +99,9 @@
             this.tabControl1.SuspendLayout();
             this.tabPage3.SuspendLayout();
             this.tabPage5.SuspendLayout();
+            this.groupBox2.SuspendLayout();
+            this.groupBox3.SuspendLayout();
+            this.groupBox4.SuspendLayout();
             this.SuspendLayout();
             // 
             // timer_udpTX
@@ -498,12 +511,9 @@
             // 
             // tabPage5
             // 
-            this.tabPage5.Controls.Add(this.textBox1);
-            this.tabPage5.Controls.Add(this.bt_shutdown);
-            this.tabPage5.Controls.Add(this.cb_savegoodfiles);
-            this.tabPage5.Controls.Add(this.cb_stampcall);
-            this.tabPage5.Controls.Add(this.tb_callsign);
-            this.tabPage5.Controls.Add(this.label1);
+            this.tabPage5.Controls.Add(this.groupBox4);
+            this.tabPage5.Controls.Add(this.groupBox3);
+            this.tabPage5.Controls.Add(this.groupBox2);
             this.tabPage5.Location = new System.Drawing.Point(4, 22);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Size = new System.Drawing.Size(1291, 553);
@@ -511,22 +521,91 @@
             this.tabPage5.Text = "Setup";
             this.tabPage5.UseVisualStyleBackColor = true;
             // 
-            // textBox1
+            // textBox3
             // 
-            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.textBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox1.ForeColor = System.Drawing.Color.Red;
-            this.textBox1.Location = new System.Drawing.Point(379, 78);
-            this.textBox1.Multiline = true;
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(259, 55);
-            this.textBox1.TabIndex = 5;
-            this.textBox1.Text = "before switching off the modem SBC\r\nclick here to avoid defective SD-cards.\r\nWAIT" +
-    " 1 minute before powering OFF the modem.";
+            this.textBox3.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox3.ForeColor = System.Drawing.Color.Black;
+            this.textBox3.Location = new System.Drawing.Point(138, 73);
+            this.textBox3.Multiline = true;
+            this.textBox3.Name = "textBox3";
+            this.textBox3.Size = new System.Drawing.Size(177, 19);
+            this.textBox3.TabIndex = 12;
+            this.textBox3.Text = "(HDMI is usually not used)";
+            // 
+            // textBox2
+            // 
+            this.textBox2.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox2.ForeColor = System.Drawing.Color.Black;
+            this.textBox2.Location = new System.Drawing.Point(189, 48);
+            this.textBox2.Multiline = true;
+            this.textBox2.Name = "textBox2";
+            this.textBox2.Size = new System.Drawing.Size(126, 50);
+            this.textBox2.TabIndex = 11;
+            this.textBox2.Text = "in case the RX has sync\r\nproblems, it can be\r\nre-initialized here.";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(12, 50);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(112, 13);
+            this.label4.TabIndex = 10;
+            this.label4.Text = "Audio Record Device:";
+            // 
+            // cb_audioCAP
+            // 
+            this.cb_audioCAP.FormattingEnabled = true;
+            this.cb_audioCAP.Location = new System.Drawing.Point(138, 46);
+            this.cb_audioCAP.Name = "cb_audioCAP";
+            this.cb_audioCAP.Size = new System.Drawing.Size(230, 21);
+            this.cb_audioCAP.TabIndex = 9;
+            this.cb_audioCAP.Text = "Default";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 23);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(121, 13);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Audio Playback Device:";
+            // 
+            // cb_audioPB
+            // 
+            this.cb_audioPB.FormattingEnabled = true;
+            this.cb_audioPB.Location = new System.Drawing.Point(138, 19);
+            this.cb_audioPB.Name = "cb_audioPB";
+            this.cb_audioPB.Size = new System.Drawing.Size(230, 21);
+            this.cb_audioPB.TabIndex = 7;
+            this.cb_audioPB.Text = "Default";
+            // 
+            // bt_resetmodem
+            // 
+            this.bt_resetmodem.Location = new System.Drawing.Point(189, 19);
+            this.bt_resetmodem.Name = "bt_resetmodem";
+            this.bt_resetmodem.Size = new System.Drawing.Size(117, 23);
+            this.bt_resetmodem.TabIndex = 6;
+            this.bt_resetmodem.Text = "Reset RX Modem";
+            this.bt_resetmodem.UseVisualStyleBackColor = true;
+            this.bt_resetmodem.Click += new System.EventHandler(this.bt_resetmodem_Click);
+            // 
+            // tb_shutdown
+            // 
+            this.tb_shutdown.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.tb_shutdown.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tb_shutdown.ForeColor = System.Drawing.Color.Red;
+            this.tb_shutdown.Location = new System.Drawing.Point(17, 48);
+            this.tb_shutdown.Multiline = true;
+            this.tb_shutdown.Name = "tb_shutdown";
+            this.tb_shutdown.Size = new System.Drawing.Size(155, 50);
+            this.tb_shutdown.TabIndex = 5;
+            this.tb_shutdown.Text = "before switching off the \r\nmodem SBC click here to \r\navoid defective SD-cards.\r\n";
             // 
             // bt_shutdown
             // 
-            this.bt_shutdown.Location = new System.Drawing.Point(379, 49);
+            this.bt_shutdown.Location = new System.Drawing.Point(17, 19);
             this.bt_shutdown.Name = "bt_shutdown";
             this.bt_shutdown.Size = new System.Drawing.Size(155, 23);
             this.bt_shutdown.TabIndex = 4;
@@ -539,7 +618,7 @@
             this.cb_savegoodfiles.AutoSize = true;
             this.cb_savegoodfiles.Checked = true;
             this.cb_savegoodfiles.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_savegoodfiles.Location = new System.Drawing.Point(106, 136);
+            this.cb_savegoodfiles.Location = new System.Drawing.Point(71, 90);
             this.cb_savegoodfiles.Name = "cb_savegoodfiles";
             this.cb_savegoodfiles.Size = new System.Drawing.Size(159, 17);
             this.cb_savegoodfiles.TabIndex = 3;
@@ -551,7 +630,7 @@
             this.cb_stampcall.AutoSize = true;
             this.cb_stampcall.Checked = true;
             this.cb_stampcall.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_stampcall.Location = new System.Drawing.Point(106, 113);
+            this.cb_stampcall.Location = new System.Drawing.Point(71, 67);
             this.cb_stampcall.Name = "cb_stampcall";
             this.cb_stampcall.Size = new System.Drawing.Size(146, 17);
             this.cb_stampcall.TabIndex = 2;
@@ -561,7 +640,7 @@
             // tb_callsign
             // 
             this.tb_callsign.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
-            this.tb_callsign.Location = new System.Drawing.Point(106, 49);
+            this.tb_callsign.Location = new System.Drawing.Point(71, 28);
             this.tb_callsign.Name = "tb_callsign";
             this.tb_callsign.Size = new System.Drawing.Size(151, 20);
             this.tb_callsign.TabIndex = 1;
@@ -569,7 +648,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(49, 52);
+            this.label1.Location = new System.Drawing.Point(14, 31);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(46, 13);
             this.label1.TabIndex = 0;
@@ -579,19 +658,21 @@
             // 
             this.cb_speed.FormattingEnabled = true;
             this.cb_speed.Items.AddRange(new object[] {
-            "3000 QPSK BW: 1800 Hz ",
-            "3150 QPSK BW: 1900 Hz ",
-            "3675 QPSK BW: 2200 Hz ",
+            "3000 QPSK BW: 1700 Hz ",
+            "3150 QPSK BW: 1800 Hz ",
+            "3675 QPSK BW: 2100 Hz ",
             "4000 QPSK BW: 2400 Hz ",
-            "4410 QPSK BW: 2700 Hz (default QO-100)",
-            "4800 QPSK BW: 2900 Hz (experimental)",
+            "4410 QPSK BW: 2500 Hz (QO-100)",
+            "4800 QPSK BW: 2700 Hz",
             "5500 8PSK BW: 2300 Hz",
-            "6000 8PSK BW: 2500 Hz (QO-100 beacon)"});
+            "6000 8PSK BW: 2500 Hz (QO-100)",
+            "6600 8PSK BW: 2600 Hz",
+            "7200 8PSK BW: 2700 Hz"});
             this.cb_speed.Location = new System.Drawing.Point(636, 644);
             this.cb_speed.Name = "cb_speed";
             this.cb_speed.Size = new System.Drawing.Size(324, 21);
             this.cb_speed.TabIndex = 11;
-            this.cb_speed.Text = "4410 QPSK BW: 2700 Hz (default QO-100)";
+            this.cb_speed.Text = "4410 QPSK BW: 2500 Hz (QO-100)";
             this.cb_speed.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
             // label_speed
@@ -608,6 +689,46 @@
             this.timer_searchmodem.Interval = 1000;
             this.timer_searchmodem.Tick += new System.EventHandler(this.timer_searchmodem_Tick);
             // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.tb_callsign);
+            this.groupBox2.Controls.Add(this.label1);
+            this.groupBox2.Controls.Add(this.cb_stampcall);
+            this.groupBox2.Controls.Add(this.cb_savegoodfiles);
+            this.groupBox2.Location = new System.Drawing.Point(12, 13);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Size = new System.Drawing.Size(384, 126);
+            this.groupBox2.TabIndex = 13;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Personal Settings";
+            // 
+            // groupBox3
+            // 
+            this.groupBox3.Controls.Add(this.cb_audioPB);
+            this.groupBox3.Controls.Add(this.label3);
+            this.groupBox3.Controls.Add(this.textBox3);
+            this.groupBox3.Controls.Add(this.cb_audioCAP);
+            this.groupBox3.Controls.Add(this.label4);
+            this.groupBox3.Location = new System.Drawing.Point(12, 146);
+            this.groupBox3.Name = "groupBox3";
+            this.groupBox3.Size = new System.Drawing.Size(384, 107);
+            this.groupBox3.TabIndex = 14;
+            this.groupBox3.TabStop = false;
+            this.groupBox3.Text = "Transceiver Audio";
+            // 
+            // groupBox4
+            // 
+            this.groupBox4.Controls.Add(this.bt_shutdown);
+            this.groupBox4.Controls.Add(this.tb_shutdown);
+            this.groupBox4.Controls.Add(this.bt_resetmodem);
+            this.groupBox4.Controls.Add(this.textBox2);
+            this.groupBox4.Location = new System.Drawing.Point(12, 259);
+            this.groupBox4.Name = "groupBox4";
+            this.groupBox4.Size = new System.Drawing.Size(384, 105);
+            this.groupBox4.TabIndex = 15;
+            this.groupBox4.TabStop = false;
+            this.groupBox4.Text = "Maintenance";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -622,7 +743,7 @@
             this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "QO-100 NB Transponder HS Transmission AMSAT-DL V0.1 by DJ0ABR";
+            this.Text = "QO-100 NB Transponder HS Transmission AMSAT-DL V0.2 by DJ0ABR";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
@@ -637,7 +758,12 @@
             this.tabPage3.ResumeLayout(false);
             this.tabPage3.PerformLayout();
             this.tabPage5.ResumeLayout(false);
-            this.tabPage5.PerformLayout();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
+            this.groupBox3.ResumeLayout(false);
+            this.groupBox3.PerformLayout();
+            this.groupBox4.ResumeLayout(false);
+            this.groupBox4.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -693,8 +819,18 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox cb_stampcall;
         private System.Windows.Forms.CheckBox cb_savegoodfiles;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox tb_shutdown;
         private System.Windows.Forms.Button bt_shutdown;
+        private System.Windows.Forms.Button bt_resetmodem;
+        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.ComboBox cb_audioCAP;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.ComboBox cb_audioPB;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.GroupBox groupBox4;
+        private System.Windows.Forms.GroupBox groupBox3;
+        private System.Windows.Forms.GroupBox groupBox2;
     }
 }
 

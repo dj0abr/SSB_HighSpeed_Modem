@@ -52,7 +52,11 @@ namespace oscardata
             OperatingSystem osversion = System.Environment.OSVersion;
             statics.OSversion = osversion.Platform.ToString();
             if (osversion.VersionString.Contains("indow"))
+            {
                 statics.ostype = 0;
+                tb_shutdown.Visible = false;
+                bt_shutdown.Visible = false;
+            }
             else
                 statics.ostype = 1; // Linux
 
@@ -90,8 +94,8 @@ namespace oscardata
             {
                 if (Udp.GetBufferCount() > 3) return;
 
-                Byte[] txdata = new byte[statics.PayloadLen+2];
-                
+                Byte[] txdata = new byte[statics.PayloadLen + 2];
+
                 txdata[0] = (Byte)statics.BERtest; // BER Test Marker
                 txdata[1] = frameinfo;
 
@@ -173,6 +177,22 @@ namespace oscardata
                     comboBox1_SelectedIndexChanged(null, null); // send speed to modem
                 }
             }
+
+            if (statics.GotAudioDevices == 1)
+            {
+                statics.GotAudioDevices = 2;
+                // populate combo boxes
+                foreach (String s in statics.AudioPBdevs)
+                {
+                    if(s.Length > 1)
+                        cb_audioPB.Items.Add(s);
+                }
+                foreach (String s in statics.AudioCAPdevs)
+                {
+                    if (s.Length > 1)
+                        cb_audioCAP.Items.Add(s);
+                }
+            }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -188,6 +208,7 @@ namespace oscardata
         int speed;
         int tmpnum = 0;
         int file_lostframes = 0;
+        int last_fileid = 0;
         private void timer_udprx_Tick(object sender, EventArgs e)
         {
             while (true)
@@ -246,7 +267,11 @@ namespace oscardata
                         //Console.WriteLine("first, single");
                         rxdata = ArraySend.GetAndRemoveHeader(rxdata);
                         if (rxdata == null) return;
+                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
+                        last_fileid = ArraySend.FileID;
                     }
+                    else
+                        last_fileid = 0;
 
                     // collect all received data into zip_RXtempfilename
                     Byte[] ba = null;
@@ -280,6 +305,11 @@ namespace oscardata
                         // reduce for the real file length
                         Byte[] fc = File.ReadAllBytes(statics.zip_RXtempfilename);
                         Byte[] fdst = new byte[ArraySend.FileSize];
+                        if(fc.Length < ArraySend.FileSize)
+                        {
+                            Console.WriteLine("len=" + fc.Length + " fz=" + ArraySend.FileSize);
+                            return;
+                        }
                         Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
                         File.WriteAllBytes(statics.zip_RXtempfilename, fdst);
 
@@ -330,8 +360,11 @@ namespace oscardata
                     if (minfo == statics.FirstFrame)
                     {
                         rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (rxdata == null) return;
+                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
+                        last_fileid = ArraySend.FileID;
                     }
+                    else
+                        last_fileid = 0;
 
                     Byte[] ba = null;
                     Byte[] nba;
@@ -410,8 +443,11 @@ namespace oscardata
                     {
                         //Console.WriteLine("first, single");
                         rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (rxdata == null) return;
+                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
+                        last_fileid = ArraySend.FileID;
                     }
+                    else
+                        last_fileid = 0;
 
                     // collect all received data into zip_RXtempfilename
                     Byte[] ba = null;
@@ -445,6 +481,12 @@ namespace oscardata
                         // reduce for the real file length
                         Byte[] fc = File.ReadAllBytes(statics.zip_RXtempfilename);
                         Byte[] fdst = new byte[ArraySend.FileSize];
+                        if (fc.Length < ArraySend.FileSize)
+                        {
+                            Console.WriteLine("len=" + fc.Length + " fz=" + ArraySend.FileSize);
+                            return;
+                        }
+                        Console.WriteLine("copy final binary file");
                         Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
                         File.WriteAllBytes(statics.zip_RXtempfilename, fdst);
 
@@ -587,35 +629,24 @@ namespace oscardata
 
         private void timer_qpsk_Tick(object sender, EventArgs e)
         {
-            panel_constel.Invalidate();
+            if(Udp.IQavail())
+                panel_constel.Invalidate();
+
             panel_txspectrum.Invalidate();
         }
 
         private void panel_constel_Paint(object sender, PaintEventArgs e)
         {
-            Pen pen = new Pen(Brushes.LightGray);
-            e.Graphics.DrawEllipse(pen, 0, 0, panel_constel.Size.Width-1, panel_constel.Size.Height-1);
-            e.Graphics.DrawLine(pen, panel_constel.Size.Width / 2, 0, panel_constel.Size.Width / 2, panel_constel.Size.Height);
-            e.Graphics.DrawLine(pen, 0, panel_constel.Size.Height / 2, panel_constel.Size.Width, panel_constel.Size.Height/2);
-
-            while (true)
+            Bitmap bm = Udp.UdpBitmap();
+            if (bm != null)
             {
-                qpskitem qi = Udp.UdpGetIQ();
-                if (qi == null) break;
+                Pen pen = new Pen(Brushes.LightGray);
+                e.Graphics.DrawEllipse(pen, 0, 0, panel_constel.Size.Width - 1, panel_constel.Size.Height - 1);
+                e.Graphics.DrawLine(pen, panel_constel.Size.Width / 2, 0, panel_constel.Size.Width / 2, panel_constel.Size.Height);
+                e.Graphics.DrawLine(pen, 0, panel_constel.Size.Height / 2, panel_constel.Size.Width, panel_constel.Size.Height / 2);
 
-                // re and im are in the range of +/- 2^24 (16777216)
-                // scale it to +/- 128
-                double fre = qi.re;
-                double fim = qi.im;
-
-                fre = fre * panel_constel.Size.Width / 2 / 16777216.0;
-                fim = fim * panel_constel.Size.Width / 2 / 16777216.0;
-
-                // scale it to the picture
-                int x = panel_constel.Size.Width / 2 + (int)fre - 2;
-                int y = panel_constel.Size.Height / 2 + (int)fim - 2;
-
-                e.Graphics.FillEllipse(Brushes.Blue, x, y, 2, 2);
+                e.Graphics.DrawImage(bm, 0, 0);
+                bm.Dispose();
             }
         }
 
@@ -959,6 +990,35 @@ namespace oscardata
             else
                 line += " sequence OK";
 
+            int bits = rxframecounter * 258 * 8;
+            int bytes = rxframecounter * 258;
+            String sbit = "b";
+            String sbyt = "B";
+
+            if (bits > 1000)
+            {
+                bits /= 1000;
+                sbit = "kb";
+            }
+            if (bits > 1000)
+            {
+                bits /= 1000;
+                sbit = "Mb";
+            }
+
+            if (bytes > 1000)
+            {
+                bytes /= 1000;
+                sbyt = "kB";
+            }
+            if (bytes > 1000)
+            {
+                bytes /= 1000;
+                sbyt = "MB";
+            }
+
+            line += " " + bits.ToString() + " " + sbit + "  " + bytes.ToString() + " " + sbyt;
+
             line += " BER: " + string.Format("{0:#.##E+0}", ber);  // ber.ToString("E3");
 
             line += "\r\n";
@@ -1062,16 +1122,38 @@ namespace oscardata
             return ip;
         }
 
+        Byte getPBaudioDevice()
+        {
+            String s = cb_audioPB.Text;
+            Byte x = (Byte)cb_audioPB.Items.IndexOf(s);
+            //if (s.ToUpper() == "DEFAULT") x = 255;
+            return x;
+        }
+
+        Byte getCAPaudioDevice()
+        {
+            String s = cb_audioCAP.Text;
+            Byte x = (Byte)cb_audioCAP.Items.IndexOf(s);
+            //if (s.ToUpper() == "DEFAULT") x = 255;
+            return x;
+        }
+
         /*
          * search for the modem IP:
-         * send a search message (2 bytes) via UDP to port UdpBCport
+         * send a search message via UDP to port UdpBCport
          * if a modem receives this message, it returns with an
          * UDP message to UdpBCport containing a String with it's IP address
+         * this message also contains the selected Audio Devices
         */
 
         private void search_modem()
         {
-            Udp.UdpBCsend(new Byte[] { (Byte)0x3c }, GetMyBroadcastIP(), statics.UdpBCport_AppToModem);
+            Byte[] txb = new byte[3];
+            txb[0] = 0x3c;  // ID of this message
+            txb[1] = getPBaudioDevice();
+            txb[2] = getCAPaudioDevice();
+
+            Udp.UdpBCsend(txb, GetMyBroadcastIP(), statics.UdpBCport_AppToModem);
 
             Udp.searchtimeout++;
             if (Udp.searchtimeout >= 3)
@@ -1161,6 +1243,8 @@ namespace oscardata
                 case 5: real_rate = 4800; break;
                 case 6: real_rate = 5525; break;
                 case 7: real_rate = 6000; break;
+                case 8: real_rate = 6615; break;
+                case 9: real_rate = 7200; break;
             }
 
             statics.setDatarate(real_rate);
@@ -1209,17 +1293,6 @@ namespace oscardata
                 }
             }
 
-        }
-
-        /// <summary>
-        // TEST ONLY: tell modem to send a file
-        private void button1_Click(object sender, EventArgs e)
-        {
-            Byte[] txdata = new byte[statics.PayloadLen + 2];
-            txdata[0] = (Byte)statics.AutosendFile;
-
-            // and transmit it
-            Udp.UdpSend(txdata);
         }
 
         private void bt_openrxfile_Click(object sender, EventArgs e)
@@ -1288,6 +1361,8 @@ namespace oscardata
                     cb_stampcall.Checked = (s == "1");
                     s = ReadString(sr);
                     cb_savegoodfiles.Checked = (s == "1");
+                    cb_audioPB.Text = ReadString(sr);
+                    cb_audioCAP.Text = ReadString(sr);
                 }
             }
             catch
@@ -1295,6 +1370,9 @@ namespace oscardata
                 tb_callsign.Text = "";
                 cb_speed.Text = "4000 QPSK BW: 2400 Hz (default QO-100)";
             }
+
+            if (cb_audioPB.Text.Length <= 1) cb_audioPB.Text = "Default";
+            if (cb_audioCAP.Text.Length <= 1) cb_audioCAP.Text = "Default";
         }
 
         void save_Setup()
@@ -1307,6 +1385,8 @@ namespace oscardata
                     sw.WriteLine(cb_speed.Text);
                     sw.WriteLine(cb_stampcall.Checked?"1":"0");
                     sw.WriteLine(cb_savegoodfiles.Checked ? "1" : "0");
+                    sw.WriteLine(cb_audioPB.Text);
+                    sw.WriteLine(cb_audioCAP.Text);
                 }
             }
             catch { }
@@ -1325,6 +1405,26 @@ namespace oscardata
 
                 MessageBox.Show("Please wait abt. 1 minute before powering OFF the modem", "Shut Down Modem", MessageBoxButtons.OK);
             }
+        }
+
+        /// <summary>
+        // TEST ONLY: tell modem to send a file
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Byte[] txdata = new byte[statics.PayloadLen + 2];
+            txdata[0] = (Byte)statics.AutosendFile;
+
+            // and transmit it
+            Udp.UdpSend(txdata);
+        }
+
+        private void bt_resetmodem_Click(object sender, EventArgs e)
+        {
+            Byte[] txdata = new byte[statics.PayloadLen + 2];
+            txdata[0] = (Byte)statics.ResetModem;
+
+            // and transmit it
+            Udp.UdpSend(txdata);
         }
     }
 }
