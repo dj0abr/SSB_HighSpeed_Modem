@@ -21,6 +21,12 @@ Raspberry 4 (3B+)
 
 * Application Software "oscardata.exe" running on Windows, Linux, (possibly MAC-OS, not tested)
 
+# 3rd Party Libraries
+this software uses these programs:
+* Shifra Reed Solomon code: https://www.schifra.com/
+* liquid-SDR: https://github.com/jgaeddert/liquid-dsp
+* BASS Audio: https://www.un4seen.com/
+* fftw3: http://www.fftw.org
 
 # building the software
 * Linux
