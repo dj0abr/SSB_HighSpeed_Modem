@@ -8,5 +8,5 @@ default: $(OBJ)
 	g++ $(CXXFLAGS) -o ../LinuxRelease/hsmodem $(OBJ) $(LDFLAGS)
 
 clean:
-	rm -f *.o ../LinuxRelease/hsmodem
+	rm -f *.o
 
