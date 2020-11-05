@@ -23,10 +23,10 @@ Raspberry 4 (3B+)
 
 # 3rd Party Libraries
 this software uses these programs:
-* Shifra Reed Solomon code: https://www.schifra.com/
-* liquid-SDR: https://github.com/jgaeddert/liquid-dsp
-* BASS Audio: https://www.un4seen.com/
-* fftw3: http://www.fftw.org
+* Shifra Reed Solomon code: https://www.schifra.com/ (GPL V.2)
+* liquid-SDR: https://github.com/jgaeddert/liquid-dsp (MIT License)
+* BASS Audio: https://www.un4seen.com/ (free for non-commercial use)
+* fftw3: http://www.fftw.org (GPL V.2 or later)
 
 # building the software
 * Linux
