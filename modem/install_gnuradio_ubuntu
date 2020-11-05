@@ -1,6 +1,0 @@
-sudo apt-get update
-sudo apt-get install software-properties-common
-sudo add-apt-repository ppa:gnuradio/gnuradio-releases
-sudo apt-get update
-sudo apt-get install gnuradio
-sudo ldconfig

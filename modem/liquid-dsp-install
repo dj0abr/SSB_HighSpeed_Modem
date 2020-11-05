@@ -1,9 +1,0 @@
-sudo apt install git autoconf libsndfile-dev libasound-dev 
-git clone git://github.com/jgaeddert/liquid-dsp.git
-cd liquid-dsp
-./bootstrap.sh
-./configure
-make -j 8
-sudo make install
-sudo ldconfig
-
