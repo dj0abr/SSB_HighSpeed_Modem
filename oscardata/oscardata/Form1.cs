@@ -36,12 +36,12 @@ namespace oscardata
     {
         Imagehandler ih = new Imagehandler();
         int txcommand = 0;      // commands what to send
-        int txframecounter = 0;
         Byte frameinfo = (Byte)statics.FirstFrame;
         String TXfilename;
         int rxbytecounter = 0;
         DateTime starttime;
         String old_tsip = "";
+        bool modemrunning = false;
 
         public Form1()
         {
@@ -59,6 +59,9 @@ namespace oscardata
             }
             else
                 statics.ostype = 1; // Linux
+
+            // start hsmodem (.exe)
+            modemrunning = statics.StartHSmodem();
 
             // set temp paths
             statics.zip_TXtempfilename = statics.addTmpPath(statics.zip_TXtempfilename);
@@ -92,26 +95,26 @@ namespace oscardata
             // BER testdata
             if (txcommand == statics.BERtest)
             {
-                if (Udp.GetBufferCount() > 3) return;
-
-                Byte[] txdata = new byte[statics.PayloadLen + 2];
-
-                txdata[0] = (Byte)statics.BERtest; // BER Test Marker
-                txdata[1] = frameinfo;
-
-                Byte tb = (Byte)'A';
-                for (int i = 2; i < txdata.Length; i++)
+                if (Udp.GetBufferCount() < 2)
                 {
-                    txdata[i] = tb;
-                    tb++;
-                    if (tb == 'z') tb = (Byte)'A';
+                    Byte[] txdata = new byte[statics.PayloadLen + 2];
+
+                    txdata[0] = (Byte)statics.BERtest; // BER Test Marker
+                    txdata[1] = frameinfo;
+
+                    Byte tb = (Byte)'A';
+                    for (int i = 2; i < txdata.Length; i++)
+                    {
+                        txdata[i] = tb;
+                        tb++;
+                        if (tb == 'z') tb = (Byte)'A';
+                    }
+
+                    // and transmit it
+                    Udp.UdpSendData(txdata);
+
+                    frameinfo = (Byte)statics.NextFrame;
                 }
-
-                // and transmit it
-                Udp.UdpSend(txdata);
-
-                frameinfo = (Byte)statics.NextFrame;
-                txframecounter++;
             }
 
             if (ArraySend.getSending())
@@ -169,10 +172,14 @@ namespace oscardata
             if (ts_ip.Text.Contains("?") || ts_ip.Text.Contains("1.2.3.4") || old_tsip != statics.ModemIP)
             {
                 if (statics.ModemIP == "1.2.3.4")
+                {
                     ts_ip.Text = "Modem-IP: ?";
+                    ts_ip.ForeColor = Color.Red;
+                }
                 else
                 {
                     ts_ip.Text = "Modem-IP: " + statics.ModemIP;
+                    ts_ip.ForeColor = Color.Black;
                     old_tsip = statics.ModemIP;
                     comboBox1_SelectedIndexChanged(null, null); // send speed to modem
                 }
@@ -193,11 +200,38 @@ namespace oscardata
                         cb_audioCAP.Items.Add(s);
                 }
             }
+
+
+            if (setPBvolume >= 0)
+            {
+                Byte[] txdata = new byte[2];
+                txdata[0] = (Byte)statics.SetPBvolume;
+                txdata[1] = (Byte)setPBvolume;
+                Udp.UdpSendCtrl(txdata);
+                setPBvolume = -1;
+            }
+
+            if (setCAPvolume != -1)
+            {
+                Byte[] txdata = new byte[2];
+                txdata[0] = (Byte)statics.SetCAPvolume;
+                txdata[1] = (Byte)setCAPvolume;
+                Udp.UdpSendCtrl(txdata);
+                setCAPvolume = -1;
+            }
+
+            /*if(modemrunning == false)
+            {
+                // start hsmodem (.exe)
+                modemrunning = statics.StartHSmodem();
+            }*/
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             save_Setup();
+            statics.killall("hsmodem");
+            statics.killall("hsmodem.exe");
             // exit the threads
             statics.running = false;
             Udp.Close();
@@ -633,6 +667,8 @@ namespace oscardata
                 panel_constel.Invalidate();
 
             panel_txspectrum.Invalidate();
+
+            progressBar_fifo.Value = statics.PBfifousage;
         }
 
         private void panel_constel_Paint(object sender, PaintEventArgs e)
@@ -934,7 +970,6 @@ namespace oscardata
 
         private void button_startBERtest_Click(object sender, EventArgs e)
         {
-            txframecounter = 1;
             ber = 0;
             framelost = 0;
             totallostframes = 0;
@@ -978,8 +1013,7 @@ namespace oscardata
 
         private void BERcheck(Byte[] rxdata)
         {
-            String line =   "RX: " + rxframecounter.ToString().PadLeft(6, ' ') + 
-                            " TX: " + txframecounter.ToString().PadLeft(6, ' ') + " ";
+            String line =   "RX: " + rxframecounter.ToString().PadLeft(6, ' ') + " ";
 
             // print payload (must be printable chars)
             line += Encoding.UTF8.GetString(rxdata).Substring(0, 50) + " ...";
@@ -1100,6 +1134,9 @@ namespace oscardata
 
             label_speed.Location = new Point(panel_txspectrum.Location.X + panel_txspectrum.Size.Width + 20,panel_txspectrum.Location.Y+10);
             cb_speed.Location = new Point(label_speed.Location.X + label_speed.Size.Width + 10, label_speed.Location.Y-5);
+
+            label_fifo.Location = new Point(label_speed.Location.X, label_speed.Location.Y + 35);
+            progressBar_fifo.Location = new Point(cb_speed.Location.X, cb_speed.Location.Y + 35);
         }
 
         public String GetMyBroadcastIP()
@@ -1148,10 +1185,12 @@ namespace oscardata
 
         private void search_modem()
         {
-            Byte[] txb = new byte[3];
+            Byte[] txb = new byte[5];
             txb[0] = 0x3c;  // ID of this message
             txb[1] = getPBaudioDevice();
             txb[2] = getCAPaudioDevice();
+            txb[3] = (Byte)tb_PBvol.Value;
+            txb[4] = (Byte)tb_CAPvol.Value;
 
             Udp.UdpBCsend(txb, GetMyBroadcastIP(), statics.UdpBCport_AppToModem);
 
@@ -1254,7 +1293,7 @@ namespace oscardata
             txdata[1] = (Byte)idx;
 
             // and send info to modem
-            Udp.UdpSend(txdata);
+            Udp.UdpSendCtrl(txdata);
 
             //txcommand = statics.noTX;
             // stop any ongoing transmission
@@ -1363,6 +1402,8 @@ namespace oscardata
                     cb_savegoodfiles.Checked = (s == "1");
                     cb_audioPB.Text = ReadString(sr);
                     cb_audioCAP.Text = ReadString(sr);
+                    tb_PBvol.Value = ReadInt(sr);
+                    tb_CAPvol.Value = ReadInt(sr);
                 }
             }
             catch
@@ -1387,6 +1428,8 @@ namespace oscardata
                     sw.WriteLine(cb_savegoodfiles.Checked ? "1" : "0");
                     sw.WriteLine(cb_audioPB.Text);
                     sw.WriteLine(cb_audioCAP.Text);
+                    sw.WriteLine(tb_PBvol.Value.ToString());
+                    sw.WriteLine(tb_CAPvol.Value.ToString());
                 }
             }
             catch { }
@@ -1397,11 +1440,9 @@ namespace oscardata
             DialogResult dr = MessageBox.Show("Do you want to shut down the Modem-Computer ?", "Shut Down Modem", MessageBoxButtons.YesNo);
             if (dr == DialogResult.Yes)
             {
-                Byte[] txdata = new byte[statics.PayloadLen + 2];
+                Byte[] txdata = new byte[1];
                 txdata[0] = (Byte)statics.Modem_shutdown;
-
-                // and transmit it
-                Udp.UdpSend(txdata);
+                Udp.UdpSendCtrl(txdata);
 
                 MessageBox.Show("Please wait abt. 1 minute before powering OFF the modem", "Shut Down Modem", MessageBoxButtons.OK);
             }
@@ -1411,20 +1452,33 @@ namespace oscardata
         // TEST ONLY: tell modem to send a file
         private void button1_Click(object sender, EventArgs e)
         {
-            Byte[] txdata = new byte[statics.PayloadLen + 2];
+            Byte[] txdata = new byte[1];
             txdata[0] = (Byte)statics.AutosendFile;
 
             // and transmit it
-            Udp.UdpSend(txdata);
+            Udp.UdpSendCtrl(txdata);
         }
 
         private void bt_resetmodem_Click(object sender, EventArgs e)
         {
-            Byte[] txdata = new byte[statics.PayloadLen + 2];
+            Byte[] txdata = new byte[1];
             txdata[0] = (Byte)statics.ResetModem;
 
             // and transmit it
-            Udp.UdpSend(txdata);
+            Udp.UdpSendCtrl(txdata);
+        }
+
+        int setPBvolume = -1;
+        int setCAPvolume = -1;
+
+        private void tb_PBvol_Scroll(object sender, EventArgs e)
+        {
+            setPBvolume = tb_PBvol.Value;
+        }
+
+        private void tb_CAPvol_Scroll(object sender, EventArgs e)
+        {
+            setCAPvolume = tb_CAPvol.Value;
         }
     }
 }

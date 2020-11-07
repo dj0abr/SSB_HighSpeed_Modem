@@ -43,11 +43,12 @@ void cap_write_fifo(float sample);
 int pb_fifo_freespace(int nolock);
 void init_pipes();
 
-#define CHANNELS 1      // no of channels used
-
 HRECORD rchan = 0;		// recording channel
 BASS_INFO info;
 HSTREAM stream = 0;	
+
+int openpbdev = -1;
+int opencapdev = -1;
 
 /*void showDeviceInfo(BASS_DEVICEINFO info)
 {
@@ -69,77 +70,132 @@ HSTREAM stream = 0;
 
 }*/
 
-#define MAXDEVSTRLEN    2000
 uint8_t devstring[MAXDEVSTRLEN +100];
 char PBdevs[100][256]; // stores the device names, just for diagnosis, has no real fuction
 char CAPdevs[100][256];
 
-// build string of audio devices, to be sent to application as response to Broadcast search
-void enumerateAudioDevices()
+// audio device description table
+typedef struct {
+    int bassdev;    // bass (basswasapi) dev no
+    char name[256]; // DEV name
+} AUDIODEVS;
+
+// index is enumerated number, 0=default
+AUDIODEVS audioPBdevs[100];
+AUDIODEVS audioCAPdevs[100];
+int pbanz = 0, capanz = 0;
+
+// populate audio device list
+void readAudioDevs()
 {
-    memset(devstring, 0, sizeof(devstring));
-    devstring[0] = 3;   // ID for this UDP message
-
-    // playback devices
     int a;
-    int idx = 0;
+
+    // enter default device manually
+    audioPBdevs[pbanz].bassdev = -1;
+    strcpy(audioPBdevs[pbanz].name, "Default");
+    pbanz++;
+
+    audioCAPdevs[capanz].bassdev = -1;
+    strcpy(audioCAPdevs[capanz].name, "Default");
+    capanz++;
+
+#ifdef _LINUX_
     BASS_DEVICEINFO info;
-
-    strcat((char*)(devstring + 1), "System Default");
-    strcat((char*)(devstring + 1), "~");
-    strcpy(PBdevs[idx++], "System Default");
-
     for (a = 1; BASS_GetDeviceInfo(a, &info); a++)
     {
-        printf("PB device:%d = %s\n", a, info.name);
-        if (strlen((char*)(devstring+1)) > MAXDEVSTRLEN) break;
         if (info.flags & BASS_DEVICE_ENABLED)
         {
-            strncpy(PBdevs[idx], info.name, 255);
-            PBdevs[idx][255] = 0;
-            idx++;
-            strcat((char*)(devstring + 1), info.name);
-            strcat((char*)(devstring + 1), "~");    // audio device separator
+            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            {
+                audioPBdevs[pbanz].bassdev = a;
+                strncpy(audioPBdevs[pbanz].name, info.name, 255);
+                audioPBdevs[pbanz].name[255] = 0;
+                pbanz++;
+            }
         }
+    }
+
+    for (a = 1; BASS_RecordGetDeviceInfo(a, &info); a++)
+    {
+        if (info.flags & BASS_DEVICE_ENABLED)
+        {
+            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            {
+                audioCAPdevs[capanz].bassdev = a;
+                strncpy(audioCAPdevs[capanz].name, info.name, 255);
+                audioCAPdevs[capanz].name[255] = 0;
+                capanz++;
+            }
+        }
+    }
+#endif
+
+#ifdef _WIN32_
+    BASS_WASAPI_DEVICEINFO info;
+    for (a = 0; BASS_WASAPI_GetDeviceInfo(a, &info); a++)
+    {
+        if (!(info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED))
+        {
+            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            {
+                audioPBdevs[pbanz].bassdev = a;
+                strncpy(audioPBdevs[pbanz].name, info.name, 255);
+                audioPBdevs[pbanz].name[255] = 0;
+                pbanz++;
+            }
+        }
+
+        if ((info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED))
+        {
+            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            {
+                audioCAPdevs[capanz].bassdev = a;
+                strncpy(audioCAPdevs[capanz].name, info.name, 255);
+                audioCAPdevs[capanz].name[255] = 0;
+                capanz++;
+            }
+        }
+    }
+#endif
+}
+
+void printAudioDevs()
+{
+    printf("PB devices:\n");
+    for (int i = 0; i < pbanz; i++)
+        printf("idx:%d bass:%d name:%s\n", i, audioPBdevs[i].bassdev, audioPBdevs[i].name);
+
+    printf("CAP devices:\n");
+    for (int i = 0; i < capanz; i++)
+        printf("idx:%d bass:%d name:%s\n", i, audioCAPdevs[i].bassdev, audioCAPdevs[i].name);
+}
+
+// build string of audio device name, to be sent to application as response to Broadcast search
+// starting with PB devices, sperarator ^, capture devices
+// separator between devices: ~
+void buildUdpAudioList()
+{
+    memset(devstring, 0, sizeof(devstring));
+    devstring[0] = ' ';     // placeholder for ID for this UDP message
+
+    // playback devices
+    for (int i = 0; i < pbanz; i++)
+    {
+        strcat((char*)devstring, audioPBdevs[i].name);
+        strcat((char*)devstring, "~");    // audio device separator
     }
 
     strcat((char*)(devstring + 1), "^");    // PB, CAP separator
 
     // capture devices
-    BASS_DEVICEINFO recinfo;
-    idx = 0;
-
-    strcat((char*)(devstring + 1), "System Default");
-    strcat((char*)(devstring + 1), "~");
-    strcpy(CAPdevs[idx++], "System Default");
-
-    for (a = 0; BASS_RecordGetDeviceInfo(a, &recinfo); a++)
+    for (int i = 0; i < capanz; i++)
     {
-        printf("CAP device:%d = %s\n", a, recinfo.name);
-        if (strlen((char*)(devstring + 1)) > MAXDEVSTRLEN) break;
-        if (recinfo.flags & BASS_DEVICE_ENABLED)
-        {
-            strncpy(CAPdevs[idx], recinfo.name, 255);
-            CAPdevs[idx][255] = 0;
-            idx++;
-            strcat((char*)(devstring + 1), recinfo.name);
-            strcat((char*)(devstring + 1), "~");
-        }
+        strcat((char*)devstring, audioCAPdevs[i].name);
+        strcat((char*)devstring, "~");    // audio device separator
     }
-}
 
-/*
-* Audio Device numbering:
-* 
-* Playback:
-* 0 ... no audio, we use 0 for default, which is -1
-* 1 ... audio devices
-* 
-* Record:
-* 0 ... audio devices
-* we insert "Default" at position 0, and let the audio devices start with 1, so we are compatible with playback
-* but in init_audio() we have to substract 1
-*/
+    devstring[0] = 3;   // ID for this UDP message
+}
 
 uint8_t* getAudioDevicelist(int *len)
 {
@@ -148,59 +204,89 @@ uint8_t* getAudioDevicelist(int *len)
 }
 
 // pbdev, capdev: -1=default device
-int init_audio(int pbdev, int capdev)
+int init_audio(int setpbdev, int setcapdev)
 {
-    static int f = 1;
-    int ocd = capdev;
-
-    // PB devices start with 1 (0 not used, but here used for Default which is -1)
-    if (pbdev == 255 || pbdev == 0) pbdev = -1;
-
-    // CAP devices start with 0, but we use 0 for Default (-1)
-    // so we have to substract 1 from the real devices
-    if (capdev == 255 || capdev == 0 || capdev == -1) capdev = -1;
-    else capdev--;
+static int f = 1;
 
     if (f == 1)
     {
+        // do only once after program start
         f = 0;
-        enumerateAudioDevices();
+        readAudioDevs();
+        printAudioDevs();
+        buildUdpAudioList();
         init_pipes();
     }
-    
-    close_audio();
+
+    // translate requested device numbers to bass device numbers
+    if (setpbdev < 0 || setpbdev >= pbanz) setpbdev = 0;
+    if (setcapdev < 0 || setcapdev >= capanz) setcapdev = 0;
+
+    int pbdev = -1;
+    if (setpbdev >=0 && setpbdev < pbanz) pbdev = audioPBdevs[setpbdev].bassdev;
+    int capdev = -1;
+    if (setcapdev >= 0 && setcapdev < capanz) capdev = audioCAPdevs[setcapdev].bassdev;
 
     printf("init audio, caprate:%d\n",caprate);
-    if (pbdev != -1)
-        printf("playback device %d: %s\n", pbdev, PBdevs[pbdev]);
-    else
-        printf("playback device %d: %s\n", pbdev, "Default");
+    printf("requested PB  device: %d bassno:%d name:%s\n", setpbdev, pbdev, audioPBdevs[setpbdev].name);
+    printf("requested CAP device: %d bassno:%d name:%s\n", setcapdev, capdev, audioCAPdevs[setcapdev].name);
 
-    if (capdev != -1)
-        printf("capture device %d: %s\n", capdev, CAPdevs[ocd]);
-    else
-        printf("capture device %d: %s\n", capdev, "Default");
-    
     // check the correct BASS was loaded
-	if (HIWORD(BASS_GetVersion()) != BASSVERSION) 
+    if (HIWORD(BASS_GetVersion()) != BASSVERSION)
     {
-		printf("An incorrect version of BASS was loaded\n");
+        printf("An incorrect version of BASS was loaded\n");
         return -1;
-	}
-	
+    }
+
+#ifdef _WIN32_
+    // use WASAPI for Windows to get exclusive access to sound card
+    return init_wasapi(pbdev, capdev);
+#endif
+
+#ifdef _LINUX_
+    close_audio();
+
+    // ===== PLAYBACK ======
+
+    // initialize default output device
+    if (!BASS_Init(pbdev, caprate, 0, NULL, NULL))
+    {
+        printf("Can't initialize output device\n");
+        return -1;
+    }
+
+    // read real device number
+    int ret = BASS_GetDevice();
+    if (ret == -1)
+    {
+        printf("BASS_GetDevice: %d err:%d\n", pbdev, BASS_ErrorGetCode());
+        return -1;
+    }
+    pbdev = ret;
+
+    // set play callback
+    BASS_GetInfo(&info);
+    stream = BASS_StreamCreate(info.freq, CHANNELS, BASS_SAMPLE_FLOAT, (STREAMPROC*)WriteStream, 0); // sample: 32 bit float
+    BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0); // no buffering for minimum latency
+    BASS_ChannelPlay(stream, FALSE); // start it
+
+    // ===== CAPTURE ====
+
     // initalize default recording device
     if (!BASS_RecordInit(capdev))
     {
         printf("Can't initialize recording device: %d\n", BASS_ErrorGetCode());
         return -1;
     }
-    
-	// initialize default output device
-	if (!BASS_Init(pbdev, caprate, 0, NULL, NULL)) 
+
+    // read real device number
+    ret = BASS_GetDevice();
+    if (ret == -1)
     {
-		printf("Can't initialize output device\n");
+        printf("BASS_GetDevice: %d err:%d\n", capdev, BASS_ErrorGetCode());
         return -1;
     }
+    capdev = ret;
 
     // set capture callback
     rchan = BASS_RecordStart(caprate, CHANNELS, BASS_SAMPLE_FLOAT, RecordingCallback, 0);
@@ -208,23 +294,23 @@ int init_audio(int pbdev, int capdev)
         printf("Can't start capturing: %d\n", BASS_ErrorGetCode());
         return -1;
     }
-    
-	// set play callback
-	BASS_GetInfo(&info);
-	stream = BASS_StreamCreate(info.freq, CHANNELS, BASS_SAMPLE_FLOAT, (STREAMPROC*)WriteStream, 0); // sample: 32 bit float
-	BASS_ChannelSetAttribute(stream, BASS_ATTRIB_BUFFER, 0); // no buffering for minimum latency
-	BASS_ChannelPlay(stream, FALSE); // start it
 
     printf("audio initialized\n");
+
+    openpbdev = pbdev;
+    opencapdev = capdev;
     
     return 0;
+#endif
 }
+
+#ifdef _LINUX_
 
 void close_audio()
 {
     if(stream != 0)
     {
-        printf("!close Audio Devices\n");
+        printf("close Audio Devices\n");
         BASS_ChannelStop(rchan);
         int rr = BASS_RecordFree();
         if (!rr) printf("Bass_RecordFree error: %d\n", BASS_ErrorGetCode());
@@ -236,11 +322,50 @@ void close_audio()
     }
 }
 
+void selectPBdevice()
+{
+    if (!BASS_SetDevice(openpbdev))
+        printf("BASS_SetDevice: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+}
+
+void selectCAPdevice()
+{
+    if (!BASS_SetDevice(opencapdev))
+        printf("BASS_SetDevice: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+}
+
+void setPBvolume(int v)
+{
+    // the volume comes in % 0..99
+    // map to 0..1
+    float vf = v;
+    vf /= 100;
+
+    printf("set PB volume to:%d / %f [0..1]\n", v, vf );
+
+    selectPBdevice();
+    if (!BASS_SetVolume(vf))
+        printf("setPBvolume: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+}
+
+void setCAPvolume(int v)
+{
+    // the volume comes in % 0..99
+    // map to min/maxPBvol
+    float vf = v;
+    vf /= 100;
+
+    printf("set CAP volume to:%d / %f [0..1]\n", v, vf);
+
+    selectCAPdevice();
+    if (!BASS_RecordSetInput(-1,BASS_INPUT_ON,vf))
+        printf("setCAPvolume: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+}
+
 // capture callback
-// length: bytes. short=2byte, 2channels, so it requests samples*4
 BOOL CALLBACK RecordingCallback(HRECORD handle, const void *buffer, DWORD length, void *user)
 {
-    //printf("captured %ld samples\n",length/sizeof(float));
+    //printf("captured %ld samples, channels:%d\n",length/sizeof(float),CHANNELS);
     //measure_speed(length/sizeof(float));
     
     float *fbuffer = (float *)buffer;
@@ -268,6 +393,15 @@ DWORD CALLBACK WriteStream(HSTREAM handle, float *buffer, DWORD length, void *us
     }
 	return length;
 }
+
+#endif // _LINUX_
+
+// set volume 
+void setVolume(int pbcap, int v)
+{
+    if (pbcap == 0) setPBvolume(v);
+    else setCAPvolume(v);
+ }
 
 // ================ thread safe fifo for audio callback routines ===============
 
@@ -371,6 +505,26 @@ void pb_write_fifo_clear()
     pb_wridx = pb_rdidx = 0;
 }
 
+int pb_fifo_usedBlocks()
+{
+static int old_fill = 0;
+int fill = 0;
+
+    int fs = pb_fifo_freespace(0);
+    int used = AUDIO_PLAYBACK_BUFLEN - fs;
+    used /= (txinterpolfactor * UDPBLOCKLEN * 8 / bitsPerSymbol);
+
+    if (used > 0) fill = 1; else fill = 0;
+    if (fill == 1 && old_fill == 0)
+        printf("fifo has data to send\n");
+    if (fill == 0 && old_fill == 1)
+        printf("fifo now empty\n");
+    old_fill = fill;
+
+    //printf("free:%d used blocks:%d\n", fs, used);
+    return used;
+}
+
 int pb_fifo_freespace(int nolock)
 {
 int freebuf = 0;
@@ -412,3 +566,4 @@ int pb_read_fifo(float *data, int elements)
     PB_UNLOCK();
     return 1;
 }
+

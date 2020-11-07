@@ -28,6 +28,7 @@ int speed = 0;
 
 #define MAXSPDARR   5
 int spdarr[MAXSPDARR];
+int spdarrbps[MAXSPDARR];
 
 #ifdef _LINUX_
 int getus()
@@ -79,9 +80,37 @@ static int f=1;
     return ssum;
 }
 
+int meanvalbps(int v)
+{
+    static int f = 1;
+
+    if (f)
+    {
+        for (int i = 0; i < MAXSPDARR; i++) spdarrbps[i] = -1;
+        f = 0;
+    }
+
+    for (int i = (MAXSPDARR - 1); i > 0; i--)
+        spdarrbps[i] = spdarrbps[i - 1];
+    spdarrbps[0] = v;
+
+    int ssum = 0;
+    int cnt = 0;
+    for (int i = 0; i < MAXSPDARR; i++)
+    {
+        if (spdarrbps[i] != -1)
+        {
+            ssum += spdarrbps[i];
+            cnt++;
+        }
+    }
+    ssum /= cnt;
+    return ssum;
+}
+
 // len ... number of symbols
 // measures and calculates the speed in bit / s
-void measure_speed(int len)
+void measure_speed_syms(int len)
 {
     static int lasttim = 0;
     static int elems = 0;
@@ -96,15 +125,43 @@ void measure_speed(int len)
     
     
     elems += len;
-    if(timespan < 2000000) return;
+    if(timespan < 1000000) return;
     
     double dspd = elems;
     dspd = dspd * 1e6 / timespan;
     speed = meanval((int)dspd) * bitsPerSymbol;
     
     // here we have number of elements after 1s
-    //printf("%d items/s\n",speed);
+    printf("%d sym/s\n",speed);
     
     elems=0;
+    lasttim = tim;
+}
+
+void measure_speed_bps(int len)
+{
+    static int lasttim = 0;
+    static int elems = 0;
+
+    int tim = getus();
+    int timespan = tim - lasttim;
+    if (timespan < 0)
+    {
+        lasttim = tim;
+        return;
+    }
+
+
+    elems += len;
+    if (timespan < 1000000) return;
+
+    double dspd = elems;
+    dspd = dspd * 1e6 / timespan;
+    speed = meanvalbps((int)dspd);
+
+    // here we have number of elements after 1s
+    printf("%d bit/s\n", speed);
+
+    elems = 0;
     lasttim = tim;
 }

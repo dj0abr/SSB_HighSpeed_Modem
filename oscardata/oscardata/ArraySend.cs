@@ -192,12 +192,12 @@ namespace oscardata
 
         static void txudp(Byte[] txdata, Byte txtype, Byte filestat)
         {
-            // add the tytype and filestatus at the beginning
+            // add the txtype and filestatus at the beginning
             Byte[] darr = new byte[statics.PayloadLen + 2];
             darr[0] = txtype;
             darr[1] = filestat;
             Array.Copy(txdata, 0, darr, 2, statics.PayloadLen);
-            Udp.UdpSend(darr);
+            Udp.UdpSendData(darr);
             // Console.WriteLine("TX filestat: " + filestat+ " data:" + darr[2].ToString("X2") + " " + darr[3].ToString("X2"));
         }
     }

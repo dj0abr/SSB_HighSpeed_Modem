@@ -288,6 +288,9 @@ void make_FFTdata(float f)
 
         int bidx = 0;
         txpl[bidx++] = 4;    // type 4: FFT data follows
+        int us = pb_fifo_usedBlocks();
+        if (us > 255) us = 255;
+        txpl[bidx++] = us;    // usage of TX fifo
 
         for (int i = 0; i < fftlen; i++)
         {
@@ -310,6 +313,11 @@ static int ccol_idx = 0;
     float f;
     int ret = cap_read_fifo(&f);
     if(ret == 0) return 0;
+
+    // input volume
+#ifdef _WIN32_
+    f *= softwareCAPvolume;
+#endif
 
     make_FFTdata(f*120);
     
@@ -345,7 +353,7 @@ static int ccol_idx = 0;
         unsigned int sym_out;   // output symbol
         modem_demodulate(demod, syms, &sym_out);
         
-        measure_speed(1);
+        //measure_speed_syms(1);
         
         // try to extract a complete frame
         uint8_t symb = sym_out;
@@ -356,7 +364,7 @@ static int ccol_idx = 0;
         // we have about 2000 S/s, but this many points would make the GUI slow
         // so we send only every x
         static int ev = 0;
-        //if (++ev >= 2)
+        if (++ev >= 2)
         {
             ev = 0;
             uint32_t re = (uint32_t)(syms.real * 16777216.0);

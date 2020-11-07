@@ -80,8 +80,8 @@ void init_packer()
         rotate8APSKsyms(_8PSK_headertab[i-1], _8PSK_headertab[i], 8);
     }
     
-    for(int i=0; i<8; i++)
-        showbytestring((char*)"8CONST: ",_8PSK_headertab[i],8);
+    /*for(int i=0; i<8; i++)
+        showbytestring((char*)"8CONST: ",_8PSK_headertab[i],8);*/
 }
 
 // packs a payload into an udp data block

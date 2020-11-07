@@ -106,6 +106,7 @@ void UdpRxInit(int *sock, int port, void (*rxfunc)(uint8_t *, int, struct sockad
 #ifdef _LINUX_
 void* threadfunction(void* param) {
     socklen_t fromlen;
+    pthread_detach(pthread_self());
 #endif
 
 #ifdef _WIN32_
@@ -129,6 +130,7 @@ void threadfunction(void* param) {
         
 	}
 #ifdef _LINUX_
+    pthread_exit(NULL); // self terminate this thread
     return NULL;
 #endif
 }

@@ -33,6 +33,7 @@
 #include <math.h>
 
 #pragma comment(lib, "bass.lib")
+#pragma comment(lib, "basswasapi.lib")
 #pragma comment(lib, "libliquid.lib")
 #pragma comment(lib, "fftw_lib/libfftw3-3.lib")
 #endif
@@ -53,6 +54,7 @@
 #endif
 
 #include "bass.h"
+#include "basswasapi.h"
 #include "liquid.h"
 #include "frameformat.h"
 #include "fec.h"
@@ -63,6 +65,10 @@
 #define CRC16TX 0
 #define CRC16RX 1
 #define CRC16FILE 2
+
+// definitions for audio
+#define MAXDEVSTRLEN    2000
+#define CHANNELS 1      // no of channels used
 
 void init_packer();
 uint8_t* Pack(uint8_t* payload, int type, int status, int* plen);
@@ -88,7 +94,8 @@ uint8_t* RX_Scramble(uint8_t* data, int len);
 uint16_t Crc16_messagecalc(int rxtx, uint8_t* data, int len);
 
 void showbytestring(char* title, uint8_t* data, int anz);
-void measure_speed(int len);
+void measure_speed_syms(int len);
+void measure_speed_bps(int len);
 
 void initFEC();
 void GetFEC(uint8_t* txblock, int len, uint8_t* destArray);
@@ -100,11 +107,16 @@ void pb_write_fifo_clear();
 void pb_write_fifo(float sample);
 int cap_read_fifo(float* data);
 uint8_t* getAudioDevicelist(int* len);
+void setPBvolume(int v);
+void setCAPvolume(int v); 
+void setVolume(int pbcap, int v);
+int init_wasapi(int pbdev, int capdev);
 
 void sleep_ms(int ms);
 void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock);
 
 void modulator(uint8_t sym_in);
+int pb_fifo_usedBlocks();
 void init_dsp();
 int demodulator();
 void sendToModulator(uint8_t* d, int len);
@@ -127,7 +139,7 @@ extern int UdpDataPort_ModemToApp;
 extern int txinterpolfactor;
 extern int rxPreInterpolfactor;
 extern char appIP[20];
-
+extern float softwareCAPvolume;
 
 #ifdef _LINUX_
 int isRunning(char* prgname);

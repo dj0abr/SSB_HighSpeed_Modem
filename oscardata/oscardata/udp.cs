@@ -16,7 +16,6 @@ using System.Drawing;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Windows.Forms.VisualStyles;
 
 namespace oscardata
 {
@@ -29,6 +28,7 @@ namespace oscardata
         // Pipes for data transferred via UDP ports
         static UdpQueue uq_rx = new UdpQueue();
         static UdpQueue uq_tx = new UdpQueue();
+        static UdpQueue uq_ctrl = new UdpQueue();
         static UdpQueue uq_fft = new UdpQueue();
         static UdpQueue uq_iq = new UdpQueue();
 
@@ -83,13 +83,13 @@ namespace oscardata
                         int rxtype = rxarr[0];
                         Byte[] b = new byte[rxarr.Length - 1];
                         Array.Copy(rxarr, 1, b, 0, b.Length);
-
+                        
                         // payload
-                        if (rxtype == 1)
+                        if (rxtype == statics.udp_payload)
                             uq_rx.Add(b);
 
                         // Broadcast response
-                        if (rxtype == 3)
+                        if (rxtype == statics.udp_bc)
                         {
                             statics.ModemIP = RemoteEndpoint.Address.ToString();
                             searchtimeout = 0;
@@ -103,11 +103,16 @@ namespace oscardata
                         }
 
                         // FFT data
-                        if (rxtype == 4)
-                            uq_fft.Add(b);
+                        if (rxtype == statics.udp_fft)
+                        {
+                            statics.PBfifousage = b[0];
+                            Byte[] b1 = new byte[b.Length - 1];
+                            Array.Copy(b, 1, b1, 0, b1.Length);
+                            uq_fft.Add(b1);
+                        }
 
                         // IQ data
-                        if (rxtype == 5)
+                        if (rxtype == statics.udp_iq)
                         {
                             for (int i = 0; i < b.Length; i++)
                             {
@@ -167,7 +172,7 @@ namespace oscardata
         }
 
         static int panelw = 75, panelh = 75;
-        static int maxdrawanz = 250;
+        static int maxdrawanz = 160;
         static int drawanz = 0;
         static Bitmap bm;
         static void drawBitmap(int re, int im)
@@ -194,7 +199,7 @@ namespace oscardata
                 int x = panelw / 2 + (int)fre;
                 int y = panelh / 2 + (int)fim;
 
-                int et = 1;
+                int et = 2;
                 gr.FillEllipse(Brushes.Blue, x - et, y - et, et * 2, et * 2);
             }
         }
@@ -209,35 +214,62 @@ namespace oscardata
             // calculate cycle time for the requested data rate
             // time in ms for one bit:  1000/statics.datarate
 
-            int actdatarate = statics.getDatarate();
-            int wait_datarate = (int)(((double)statics.UdpBlocklen * 8.0 * 1000.0 / (double)(statics.getDatarate())));
+            //int actdatarate = statics.getDatarate();
+            //int wait_datarate = (int)(((double)statics.UdpBlocklen * 8.0 * 1000.0 / (double)(statics.getDatarate())));
+            //Timer TTimer = new Timer(new TimerCallback(TXTickTimer), autoEvent, 0, wait_datarate);
 
-            Timer TTimer = new Timer(new TimerCallback(TXTickTimer), autoEvent, 0, wait_datarate);
+            while (statics.running)
+            {
+                bool wait = true;
+                if(uq_ctrl.Count() > 0)
+                {
+                    // Control Message: send immediately
+                    Byte[] b = uq_ctrl.Getarr();
+                    udpc.Send(b, b.Length, statics.ModemIP, statics.UdpTXport);
+                    wait = false;
+                }
 
+                if(statics.PBfifousage < 2)
+                {
+                    // we need to send more payload data
+                    if (uq_tx.Count() > 0)
+                    {
+                        Byte[] b = uq_tx.Getarr();
+                        udpc.Send(b, b.Length, statics.ModemIP, statics.UdpTXport);
+                        wait = false;
+                    }
+                }
+                if (wait) Thread.Sleep(1);
+            }
+
+            /*
             while (statics.running)
             {
                 autoEvent.WaitOne();
                 try
                 {
-                    if (uq_tx.Count() > 0)
+                    while (uq_tx.Count() > 0)
                     {
                         // TX data available
                         Byte[] b = uq_tx.Getarr();
                         udpc.Send(b, b.Length, statics.ModemIP, statics.UdpTXport);
+                        if (b[0] < 16) break; // continue without pause for internal control messages, or break for TX messages
                     }
                 }
                 catch (Exception e)
                 {
                     String err = e.ToString();
                 }
-                if(statics.getDatarate() != actdatarate)
+
+                // do not wait in case of internal messages
+                if (statics.getDatarate() != actdatarate)
                 {
                     // rate has been changed, reset the timer
                     wait_datarate = (int)(((double)statics.UdpBlocklen * 8.0 * 1000.0 / (double)(statics.getDatarate())));
                     TTimer.Change(0, wait_datarate);
-                    actdatarate = statics.getDatarate(); 
+                    actdatarate = statics.getDatarate();
                 }
-            }
+            }*/
         }
 
         public static void UdpBCsend(Byte[] b, String ip, int port)
@@ -257,14 +289,24 @@ namespace oscardata
         // send a Byte array via UDP
         // this function can be called from anywhere in the program
         // it transfers the data to the udp-tx thread via a thread-safe pipe
-        public static void UdpSend(Byte[] b)
+        public static void UdpSendData(Byte[] b)
         {
             uq_tx.Add(b);
+        }
+
+        public static void UdpSendCtrl(Byte[] b)
+        {
+            uq_ctrl.Add(b);
         }
 
         public static int GetBufferCount()
         {
             return uq_tx.Count();
+        }
+
+        public static int GetBufferCountCtrl()
+        {
+            return uq_ctrl.Count();
         }
 
         public static Byte[] UdpReceive()

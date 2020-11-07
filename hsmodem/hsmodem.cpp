@@ -104,6 +104,8 @@ int rxPreInterpolfactor = 5;
 
 int captureDeviceNo = -1;
 int playbackDeviceNo = -1;
+int initialPBvol = -1;
+int initialCAPvol = -1;
 
 int main(int argc, char* argv[])
 {
@@ -164,6 +166,7 @@ int main(int argc, char* argv[])
         }
     }
 #endif
+    
     init_packer();
     
     initFEC();
@@ -248,10 +251,12 @@ void startModem()
     // int TX audio and modulator
     close_dsp();
     init_audio(playbackDeviceNo, captureDeviceNo);
+    setPBvolume(initialPBvol);
+    setCAPvolume(initialCAPvol);
     init_dsp();
 }
 
-void setAudioDevices(int pb, int cap)
+void setAudioDevices(int pb, int cap, int pbvol, int capvol)
 {
     //printf("%d %d\n", pb, cap);
 
@@ -260,6 +265,8 @@ void setAudioDevices(int pb, int cap)
         restart_modems = 1;
         playbackDeviceNo = pb;
         captureDeviceNo = cap;
+        initialPBvol = pbvol;
+        initialCAPvol = capvol;
     }
 }
 
@@ -268,7 +275,7 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
     if (len > 0 && pdata[0] == 0x3c)
     {
-        setAudioDevices(pdata[1], pdata[2]);
+        setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4]);
 
         char rxip[20];
         strcpy(rxip, inet_ntoa(rxsock->sin_addr));
@@ -310,12 +317,6 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
     uint8_t type = pdata[0];
     uint8_t minfo = pdata[1];
-
-    if (len != (PAYLOADLEN + 2))
-    {
-        printf("data from app: wrong length:%d (should be %d)\n", len - 2, PAYLOADLEN);
-        return;
-    }
 
     // type values: see oscardata config.cs: frame types
     if (type == 16)
@@ -362,7 +363,29 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     {
         // reset liquid RX modem
         resetModem();
+        return;
     }
+
+    if (type == 21)
+    {
+        // set playback volume (in % 0..100)
+        setVolume(0,minfo);
+        return;
+    }
+
+    if (type == 22)
+    {
+        // set capture volume (in % 0..100)
+        setVolume(1,minfo);
+        return;
+    }
+
+    if (len != (PAYLOADLEN + 2))
+    {
+        printf("data from app: wrong length:%d (should be %d)\n", len - 2, PAYLOADLEN);
+        return;
+    }
+
 
     //if (getSending() == 1) return;   // already sending (Array sending)
 
@@ -376,7 +399,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // and bits: symbols * bitsPerSymbol
         // and bytes/second: bits/8 = (caprate/txinterpolfactor) * bitsPerSymbol / 8
         // one frame has 258 bytes, so we need for 5s: 5* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
-        int numframespreamble = 3 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
+        int numframespreamble = 5 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
         for (int i = 0; i < numframespreamble; i++)
             toGR_sendData(pdata + 2, type, minfo);
     }
@@ -427,7 +450,7 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // no frame found
         // if longer ws seconds nothing found, reset liquid RX modem
         // comes here with symbol rate, i.e. 4000 S/s
-        int ws = 2;
+        int ws = 4;
         int wt = sr[speedmode].audio / sr[speedmode].tx;
         if (++fnd >= (wt * ws))
         {

@@ -220,6 +220,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bass.h" />
+    <ClInclude Include="basswasapi.h" />
+    <ClInclude Include="fec.h" />
     <ClInclude Include="fftw3.h" />
     <ClInclude Include="fftw_lib\fftw3.h" />
     <ClInclude Include="frameformat.h" />
@@ -229,6 +231,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="audio.cpp" />
+    <ClCompile Include="audio_wasapi.cpp" />
     <ClCompile Include="constellation.cpp" />
     <ClCompile Include="crc16.cpp" />
     <ClCompile Include="fec.cpp" />

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace oscardata
@@ -26,6 +28,8 @@ namespace oscardata
         public static Byte AutosendFolder = 18;
         public static Byte Modem_shutdown = 19;
         public static Byte ResetModem = 20;
+        public static Byte SetPBvolume = 21;
+        public static Byte SetCAPvolume = 22;
 
         // frame sequence, modem needs that for i.e. sending a preamble
         public static Byte FirstFrame = 0;
@@ -33,6 +37,11 @@ namespace oscardata
         public static Byte LastFrame = 2;
         public static Byte SingleFrame = 3;
 
+        // udp messages from modem
+        public static Byte udp_payload = 1;
+        public static Byte udp_bc = 3;
+        public static Byte udp_fft = 4;
+        public static Byte udp_iq = 5;
 
         // global static variables
         public static bool running = true;
@@ -56,6 +65,7 @@ namespace oscardata
         public static int GotAudioDevices = 0;
         public static String[] AudioPBdevs;
         public static String[] AudioCAPdevs;
+        public static int PBfifousage = 0;
 
         public static void setDatarate(int rate)
         {
@@ -139,11 +149,11 @@ namespace oscardata
             return enc.GetBytes(str);
         }
 
-        public static string ByteArrayToString(byte[] arr)
+        public static string ByteArrayToString(byte[] arr, int offset = 0)
         {
             Byte[] ba = new byte[arr.Length];
             int dst = 0;
-            for (int i = 0; i < arr.Length; i++)
+            for (int i = offset; i < arr.Length; i++)
             {
                 if (arr[i] != 0) ba[dst++] = arr[i];
             }
@@ -270,6 +280,77 @@ namespace oscardata
             if (idx == 0) return fn;
 
             return fn.Substring(0, idx) + "." + ext;
+        }
+
+        static Process cmd = null;
+        public static bool StartHSmodem()
+        {
+            // kill old processes already running
+            killall("hsmodem");
+            killall("hsmodem.exe");
+            // starte Prozesse
+            try
+            {
+                if (ostype == 0)
+                {
+                    if (!File.Exists("hsmodem.exe")) return false;
+                    cmd = new Process();
+                    cmd.StartInfo.FileName = "hsmodem.exe";
+                }
+                else
+                {
+                    if (!File.Exists("hsmodem")) return false;
+                    cmd = new Process();
+                    cmd.StartInfo.FileName = "hsmodem";
+                }
+
+                if (cmd != null)
+                {
+                    cmd.StartInfo.WindowStyle = ProcessWindowStyle.Normal;// .Hidden;
+                    cmd.StartInfo.Arguments = "";
+                    cmd.Start();
+                    Console.WriteLine("hsmodem started");
+                }
+            }
+            catch { return false; }
+            return true;
+        }
+
+        static public void killall(String s)
+        {
+            if (ostype == 0)
+            {
+                // kill a Windows process
+                try
+                {
+                    foreach (var process in Process.GetProcessesByName(s))
+                        process.Kill();
+                }
+                catch { }
+            }
+            else
+            {
+                // kill a Linux process
+                try
+                {
+                    if (cmd != null)
+                        cmd.Kill();
+                    cmd = null;
+
+                    Process proc = new Process();
+                    proc.EnableRaisingEvents = false;
+                    proc.StartInfo.FileName = "killall";
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.StartInfo.RedirectStandardOutput = true;
+                    proc.OutputDataReceived += (sender, args) => { };   // schreibe Output ins nichts
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.ErrorDataReceived += (sender, args) => { };   // schreibe Output ins nichts
+                    proc.StartInfo.Arguments = s;
+                    proc.Start();
+                    proc.WaitForExit();
+                }
+                catch { }
+            }
         }
     }
 }
