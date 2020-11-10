@@ -220,6 +220,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bass.h" />
+    <ClInclude Include="bassflac.h" />
     <ClInclude Include="basswasapi.h" />
     <ClInclude Include="fec.h" />
     <ClInclude Include="fftw3.h" />

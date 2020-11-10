@@ -140,7 +140,6 @@ void sendUDP(char *destIP, int destPort, uint8_t *pdata, int len)
 {
     int sockfd; 
     struct sockaddr_in     servaddr; 
-    //printf("%d %d %02X\n",destPort,len,pdata[0]);
   
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 

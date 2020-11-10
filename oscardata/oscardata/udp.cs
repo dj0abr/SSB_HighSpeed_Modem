@@ -83,10 +83,13 @@ namespace oscardata
                         int rxtype = rxarr[0];
                         Byte[] b = new byte[rxarr.Length - 1];
                         Array.Copy(rxarr, 1, b, 0, b.Length);
-                        
+
                         // payload
                         if (rxtype == statics.udp_payload)
+                        {
+                            //Console.WriteLine("payload");
                             uq_rx.Add(b);
+                        }
 
                         // Broadcast response
                         if (rxtype == statics.udp_bc)
@@ -97,7 +100,7 @@ namespace oscardata
                             String s = statics.ByteArrayToString(b);
                             String[] sa1 = s.Split(new char[] { '^' });
                             statics.AudioPBdevs = sa1[0].Split(new char[] { '~' });
-                            statics.AudioCAPdevs = sa1[1].Split(new char[] { '~' });
+                            statics.AudioCAPdevs = sa1[1].Split(new char[] { '~' }); 
                             if(statics.GotAudioDevices == 0)
                                 statics.GotAudioDevices = 1;
                         }
@@ -114,6 +117,7 @@ namespace oscardata
                         // IQ data
                         if (rxtype == statics.udp_iq)
                         {
+                            //Console.WriteLine("IQ");
                             for (int i = 0; i < b.Length; i++)
                             {
                                 // insert new byte in lastb

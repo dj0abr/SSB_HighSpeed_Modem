@@ -55,6 +55,7 @@
 
 #include "bass.h"
 #include "basswasapi.h"
+#include "bassflac.h"
 #include "liquid.h"
 #include "frameformat.h"
 #include "fec.h"
@@ -111,6 +112,7 @@ void setPBvolume(int v);
 void setCAPvolume(int v); 
 void setVolume(int pbcap, int v);
 int init_wasapi(int pbdev, int capdev);
+void sendAnnouncement();
 
 void sleep_ms(int ms);
 void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock);
@@ -140,6 +142,10 @@ extern int txinterpolfactor;
 extern int rxPreInterpolfactor;
 extern char appIP[20];
 extern float softwareCAPvolume;
+extern int announcement;
+extern int ann_running;
+extern int transmissions;
+extern int linespeed;
 
 #ifdef _LINUX_
 int isRunning(char* prgname);

@@ -289,7 +289,7 @@ void make_FFTdata(float f)
         int bidx = 0;
         txpl[bidx++] = 4;    // type 4: FFT data follows
         int us = pb_fifo_usedBlocks();
-        if (us > 255) us = 255;
+        if (us > 255 || ann_running == 1) us = 255;
         txpl[bidx++] = us;    // usage of TX fifo
 
         for (int i = 0; i < fftlen; i++)
@@ -353,7 +353,7 @@ static int ccol_idx = 0;
         unsigned int sym_out;   // output symbol
         modem_demodulate(demod, syms, &sym_out);
         
-        //measure_speed_syms(1);
+        measure_speed_syms(1);
         
         // try to extract a complete frame
         uint8_t symb = sym_out;

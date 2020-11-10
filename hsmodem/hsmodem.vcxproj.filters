@@ -83,5 +83,8 @@
     <ClInclude Include="fec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="bassflac.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

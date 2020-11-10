@@ -88,7 +88,7 @@ int UdpDataPort_fromGR_I_Q = 40137;
 
 // op mode depending values
 // default mode if not set by the app
-int speedmode = 7;
+int speedmode = 2;
 int bitsPerSymbol = 2;      // QPSK=2, 8PSK=3
 int constellationSize = 4;  // QPSK=4, 8PSK=8
 
@@ -101,11 +101,13 @@ int restart_modems = 0;
 int caprate = 44100;
 int txinterpolfactor = 20;
 int rxPreInterpolfactor = 5;
+int linespeed = 4410;
 
 int captureDeviceNo = -1;
 int playbackDeviceNo = -1;
 int initialPBvol = -1;
 int initialCAPvol = -1;
+int announcement = 0;
 
 int main(int argc, char* argv[])
 {
@@ -221,22 +223,21 @@ typedef struct {
     int tx;
     int rx;
     int bpsym;
+    int linespeed;
 } SPEEDRATE;
 
-SPEEDRATE sr[10] = {
+SPEEDRATE sr[8] = {
     // QPSK modes
-    {48000, 32, 8, 2}, // AudioRate, TX-Resampler, RX-Resampler/4, bit/symbol
-    {44100, 28, 7, 2}, // see samprate.ods
-    {44100, 24, 6, 2},
-    {48000, 24, 6, 2},
-    {44100, 20, 5, 2},
-    {48000, 20, 5, 2},
+    {48000, 32, 8, 2, 3000}, // AudioRate, TX-Resampler, RX-Resampler/4, bit/symbol, see samprate.ods
+    {48000, 24, 6, 2, 4000},
+    {44100, 20, 5, 2, 4410},
+    {48000, 20, 5, 2, 4800},
 
     // 8PSK modes
-    {44100, 24, 6, 3},
-    {48000, 24, 6, 3},
-    {44100, 20, 5, 3},
-    {48000, 20, 5, 3}
+    {44100, 24, 6, 3, 5500},
+    {48000, 24, 6, 3, 6000},
+    {44100, 20, 5, 3, 6600},
+    {48000, 20, 5, 3, 7200}
 };
 
 void startModem()
@@ -247,6 +248,7 @@ void startModem()
     caprate = sr[speedmode].audio;
     txinterpolfactor = sr[speedmode].tx;
     rxPreInterpolfactor = sr[speedmode].rx;
+    linespeed = sr[speedmode].linespeed;
 
     // int TX audio and modulator
     close_dsp();
@@ -256,7 +258,7 @@ void startModem()
     init_dsp();
 }
 
-void setAudioDevices(int pb, int cap, int pbvol, int capvol)
+void setAudioDevices(int pb, int cap, int pbvol, int capvol, int announce)
 {
     //printf("%d %d\n", pb, cap);
 
@@ -268,6 +270,8 @@ void setAudioDevices(int pb, int cap, int pbvol, int capvol)
         initialPBvol = pbvol;
         initialCAPvol = capvol;
     }
+
+    announcement = announce;
 }
 
 // called from UDP RX thread for Broadcast-search from App
@@ -275,7 +279,7 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
     if (len > 0 && pdata[0] == 0x3c)
     {
-        setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4]);
+        setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4], pdata[5]);
 
         char rxip[20];
         strcpy(rxip, inet_ntoa(rxsock->sin_addr));
@@ -325,6 +329,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         speedmode = pdata[1];
         printf("set speedmode to %d\n", speedmode);
         restart_modems = 1;
+        transmissions = 1000;   // announcement at next TX
         return;
     }
 
@@ -392,9 +397,9 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     if (minfo == 0)
     {
         // this is the first frame of a larger file
+        sendAnnouncement();
         // send it multiple times, like a preamble, to give the
         // receiver some time for synchronisation
-        // duration: 3 seconds
         // caprate: samples/s. This are symbols: caprate/txinterpolfactor
         // and bits: symbols * bitsPerSymbol
         // and bytes/second: bits/8 = (caprate/txinterpolfactor) * bitsPerSymbol / 8
@@ -405,7 +410,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     }
     else if ((len - 2) < PAYLOADLEN)
     {
-        // if not enough data for a full payload add Zeros
+        // if not enough data for a full payload add Zeros 
         uint8_t payload[PAYLOADLEN];
         memset(payload, 0, PAYLOADLEN);
         memcpy(payload, pdata + 2, len - 2);
@@ -428,7 +433,7 @@ void toGR_sendData(uint8_t* data, int type, int status)
         sendToModulator(txdata, len);
 }
 
-// called by UDP RX thread or liquid demodulator for received data
+// called by liquid demodulator for received data
 void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
     static int fnd = 0;

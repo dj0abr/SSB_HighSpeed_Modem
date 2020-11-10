@@ -50,8 +50,9 @@ HSTREAM stream = 0;
 int openpbdev = -1;
 int opencapdev = -1;
 
-/*void showDeviceInfo(BASS_DEVICEINFO info)
+void showDeviceInfo(BASS_DEVICEINFO info)
 {
+    printf("Name:%s driver:%s flags:%d:", info.name, info.driver,info.flags);
     if (info.flags & BASS_DEVICE_ENABLED)	printf("%s\n","BASS_DEVICE_ENABLED	");
     if (info.flags & BASS_DEVICE_DEFAULT)	printf("%s\n","BASS_DEVICE_DEFAULT	");
     if (info.flags & BASS_DEVICE_INIT)	printf("%s\n","BASS_DEVICE_INIT	");
@@ -68,7 +69,28 @@ int opencapdev = -1;
     if (info.flags & BASS_DEVICE_TYPE_SPDIF)	printf("%s\n","BASS_DEVICE_TYPE_SPDIF	");
     if (info.flags & BASS_DEVICE_TYPE_SPEAKERS)	printf("%s\n","BASS_DEVICE_TYPE_SPEAKERS	");
 
-}*/
+}
+
+void showDeviceInfoWasabi(BASS_WASAPI_DEVICEINFO info, int devnum)
+{
+    printf("%d: Name:%s defperiod:%f flags:%d minperiod:%f mixchans:%d mixfreq:%d type:%d ", devnum, info.name, info.defperiod, info.flags, info.minperiod,info.mixchans, info.mixfreq,info.type);
+    if (info.flags & BASS_DEVICE_ENABLED)	printf("%s\n", "BASS_DEVICE_ENABLED	");
+    if (info.flags & BASS_DEVICE_DEFAULT)	printf("%s\n", "BASS_DEVICE_DEFAULT	");
+    if (info.flags & BASS_DEVICE_INIT)	printf("%s\n", "BASS_DEVICE_INIT	");
+    if (info.flags & BASS_DEVICE_LOOPBACK)	printf("%s\n", "BASS_DEVICE_LOOPBACK	");
+    if (info.flags & BASS_DEVICE_TYPE_DIGITAL)	printf("%s\n", "BASS_DEVICE_TYPE_DIGITAL	");
+    if (info.flags & BASS_DEVICE_TYPE_DISPLAYPORT)	printf("%s\n", "BASS_DEVICE_TYPE_DISPLAYPORT	");
+    if (info.flags & BASS_DEVICE_TYPE_HANDSET)	printf("%s\n", "BASS_DEVICE_TYPE_HANDSET	");
+    if (info.flags & BASS_DEVICE_TYPE_HDMI)	printf("%s\n", "BASS_DEVICE_TYPE_HDMI	");
+    if (info.flags & BASS_DEVICE_TYPE_HEADPHONES)	printf("%s\n", "BASS_DEVICE_TYPE_HEADPHONES	");
+    if (info.flags & BASS_DEVICE_TYPE_HEADSET)	printf("%s\n", "BASS_DEVICE_TYPE_HEADSET	");
+    if (info.flags & BASS_DEVICE_TYPE_LINE)	printf("%s\n", "BASS_DEVICE_TYPE_LINE	");
+    if (info.flags & BASS_DEVICE_TYPE_MICROPHONE)	printf("%s\n", "BASS_DEVICE_TYPE_MICROPHONE	");
+    if (info.flags & BASS_DEVICE_TYPE_NETWORK)	printf("%s\n", "BASS_DEVICE_TYPE_NETWORK	");
+    if (info.flags & BASS_DEVICE_TYPE_SPDIF)	printf("%s\n", "BASS_DEVICE_TYPE_SPDIF	");
+    if (info.flags & BASS_DEVICE_TYPE_SPEAKERS)	printf("%s\n", "BASS_DEVICE_TYPE_SPEAKERS	");
+    printf("\n");
+}
 
 uint8_t devstring[MAXDEVSTRLEN +100];
 char PBdevs[100][256]; // stores the device names, just for diagnosis, has no real fuction
@@ -103,9 +125,10 @@ void readAudioDevs()
     BASS_DEVICEINFO info;
     for (a = 1; BASS_GetDeviceInfo(a, &info); a++)
     {
-        if (info.flags & BASS_DEVICE_ENABLED)
+        showDeviceInfo(info);
+        if (info.flags & BASS_DEVICE_ENABLED && !(info.flags & BASS_DEVICE_LOOPBACK))
         {
-            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            if (!strstr(info.name, "efault"))
             {
                 audioPBdevs[pbanz].bassdev = a;
                 strncpy(audioPBdevs[pbanz].name, info.name, 255);
@@ -117,9 +140,10 @@ void readAudioDevs()
 
     for (a = 1; BASS_RecordGetDeviceInfo(a, &info); a++)
     {
-        if (info.flags & BASS_DEVICE_ENABLED)
+        //showDeviceInfo(info);
+        if (info.flags & BASS_DEVICE_ENABLED && !(info.flags & BASS_DEVICE_LOOPBACK))
         {
-            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            if (!strstr(info.name, "efault"))
             {
                 audioCAPdevs[capanz].bassdev = a;
                 strncpy(audioCAPdevs[capanz].name, info.name, 255);
@@ -134,9 +158,10 @@ void readAudioDevs()
     BASS_WASAPI_DEVICEINFO info;
     for (a = 0; BASS_WASAPI_GetDeviceInfo(a, &info); a++)
     {
-        if (!(info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED))
+        //showDeviceInfoWasabi(info,a);
+        if (!(info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED) && !(info.flags & BASS_DEVICE_LOOPBACK))
         {
-            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            if (!strstr(info.name, "efault"))
             {
                 audioPBdevs[pbanz].bassdev = a;
                 strncpy(audioPBdevs[pbanz].name, info.name, 255);
@@ -145,9 +170,9 @@ void readAudioDevs()
             }
         }
 
-        if ((info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED))
+        if ((info.flags & BASS_DEVICE_INPUT) && (info.flags & BASS_DEVICE_ENABLED) && !(info.flags & BASS_DEVICE_LOOPBACK))
         {
-            if (!strstr(info.name, "HDMI") && !strstr(info.name, "hdmi") && !strstr(info.name, "efault"))
+            if (!strstr(info.name, "efault"))
             {
                 audioCAPdevs[capanz].bassdev = a;
                 strncpy(audioCAPdevs[capanz].name, info.name, 255);
@@ -181,6 +206,7 @@ void buildUdpAudioList()
     // playback devices
     for (int i = 0; i < pbanz; i++)
     {
+        sprintf((char*)devstring + strlen((char*)devstring), "%d: ", i);
         strcat((char*)devstring, audioPBdevs[i].name);
         strcat((char*)devstring, "~");    // audio device separator
     }
@@ -190,6 +216,7 @@ void buildUdpAudioList()
     // capture devices
     for (int i = 0; i < capanz; i++)
     {
+        sprintf((char*)devstring + strlen((char*)devstring), "%d: ", i);
         strcat((char*)devstring, audioCAPdevs[i].name);
         strcat((char*)devstring, "~");    // audio device separator
     }
@@ -224,7 +251,7 @@ static int f = 1;
 
     int pbdev = -1;
     if (setpbdev >=0 && setpbdev < pbanz) pbdev = audioPBdevs[setpbdev].bassdev;
-    int capdev = -1;
+    int capdev = -2;
     if (setcapdev >= 0 && setcapdev < capanz) capdev = audioCAPdevs[setcapdev].bassdev;
 
     printf("init audio, caprate:%d\n",caprate);
@@ -251,7 +278,7 @@ static int f = 1;
     // initialize default output device
     if (!BASS_Init(pbdev, caprate, 0, NULL, NULL))
     {
-        printf("Can't initialize output device\n");
+        printf("Can't initialize output device: %d err:%d\n", pbdev, BASS_ErrorGetCode());
         return -1;
     }
 
@@ -263,6 +290,8 @@ static int f = 1;
         return -1;
     }
     pbdev = ret;
+    openpbdev = pbdev;
+    printf("real BASS PB Device No: %d\n", pbdev);
 
     // set play callback
     BASS_GetInfo(&info);
@@ -275,7 +304,7 @@ static int f = 1;
     // initalize default recording device
     if (!BASS_RecordInit(capdev))
     {
-        printf("Can't initialize recording device: %d\n", BASS_ErrorGetCode());
+        printf("Can't initialize recording device: %d err:%d\n", capdev, BASS_ErrorGetCode());
         return -1;
     }
 
@@ -287,6 +316,7 @@ static int f = 1;
         return -1;
     }
     capdev = ret;
+    printf("real BASS CAP Device No: %d\n", capdev);
 
     // set capture callback
     rchan = BASS_RecordStart(caprate, CHANNELS, BASS_SAMPLE_FLOAT, RecordingCallback, 0);
@@ -297,7 +327,6 @@ static int f = 1;
 
     printf("audio initialized\n");
 
-    openpbdev = pbdev;
     opencapdev = capdev;
     
     return 0;
@@ -305,7 +334,6 @@ static int f = 1;
 }
 
 #ifdef _LINUX_
-
 void close_audio()
 {
     if(stream != 0)
@@ -394,7 +422,7 @@ DWORD CALLBACK WriteStream(HSTREAM handle, float *buffer, DWORD length, void *us
 	return length;
 }
 
-#endif // _LINUX_
+#endif
 
 // set volume 
 void setVolume(int pbcap, int v)
@@ -402,6 +430,7 @@ void setVolume(int pbcap, int v)
     if (pbcap == 0) setPBvolume(v);
     else setCAPvolume(v);
  }
+
 
 // ================ thread safe fifo for audio callback routines ===============
 
@@ -507,21 +536,9 @@ void pb_write_fifo_clear()
 
 int pb_fifo_usedBlocks()
 {
-static int old_fill = 0;
-int fill = 0;
-
     int fs = pb_fifo_freespace(0);
     int used = AUDIO_PLAYBACK_BUFLEN - fs;
     used /= (txinterpolfactor * UDPBLOCKLEN * 8 / bitsPerSymbol);
-
-    if (used > 0) fill = 1; else fill = 0;
-    if (fill == 1 && old_fill == 0)
-        printf("fifo has data to send\n");
-    if (fill == 0 && old_fill == 1)
-        printf("fifo now empty\n");
-    old_fill = fill;
-
-    //printf("free:%d used blocks:%d\n", fs, used);
     return used;
 }
 
@@ -539,6 +556,12 @@ int freebuf = 0;
     //printf("fifolen:%d check: pbw:%d pbr:%d freebuf:%d\n",AUDIO_PLAYBACK_BUFLEN,pb_wridx,pb_rdidx,freebuf);
     
     return freebuf;
+}
+
+int pb_fifo_usedspace()
+{
+    int anz = pb_fifo_freespace(0);
+    return AUDIO_PLAYBACK_BUFLEN - anz;
 }
 
 // read elements floats from fifo or return 0 if not enough floats are available
@@ -565,5 +588,106 @@ int pb_read_fifo(float *data, int elements)
     
     PB_UNLOCK();
     return 1;
+}
+
+// ================ Play FLAC Audio File ===========================
+
+typedef struct _AUDIOFILES_ {
+    char fn[256];
+    int duration;
+} AUDIOFILES;
+
+AUDIOFILES audiofiles[12] =
+{
+    {"amsat", 1100},
+    {"qpsk", 1100},
+    {"psk8", 1100},
+    {"3000", 600},
+    {"4000", 600},
+    {"4410", 900},
+    {"4800", 900},
+    {"5500", 900},
+    {"6000", 600},
+    {"6600", 900},
+    {"7200", 900},
+    {"kbps", 1000},
+};
+
+char* getAudiofn(int aidx, char *ext)
+{
+    static char filename[300];
+    strcpy(filename, "audio/");
+    strcat(filename, audiofiles[aidx].fn);
+    strcat(filename, ext);
+    return filename;
+}
+
+void playAudioFLAC(int aidx)
+{
+    int resamp = 0;
+    int len;
+    int16_t d[100];
+    printf("play:%s\n", getAudiofn(aidx, ".pcm"));
+    FILE *fp = fopen(getAudiofn(aidx,".pcm"), "rb");
+    if (fp)
+    {
+        while ((len = fread(d, sizeof(int16_t), 100, fp)))
+        {
+            for (int i = 0; i < len; i++)
+            {
+                float f = (float)d[i];
+                f /= 32768;
+                pb_write_fifo(f);
+
+                if (caprate == 48000)
+                {
+                    if (++resamp >= 9)
+                    {
+                        resamp = 0;
+                        pb_write_fifo(f);
+                    }
+                }
+
+                // sync with soundcard
+                while (pb_fifo_usedspace() > 10000) sleep_ms(1);
+            }
+            if (len != 100) break;
+        }
+        fclose(fp);
+    }
+    else
+        printf("audio file not found\n");
+}
+
+int ann_running = 0;
+int transmissions = 10000;
+
+void sendAnnouncement()
+{
+    if (announcement == 0) return;
+
+    if (++transmissions >= announcement)
+    {
+        ann_running = 1;
+        transmissions = 0;
+
+        playAudioFLAC(0);
+        if(bitsPerSymbol == 2) playAudioFLAC(1);
+        else playAudioFLAC(2);
+        switch (linespeed)
+        {
+            case 3000: playAudioFLAC(3); break;
+            case 4000: playAudioFLAC(4); break;
+            case 4410: playAudioFLAC(5); break;
+            case 4800: playAudioFLAC(6); break;
+            case 5500: playAudioFLAC(7); break;
+            case 6000: playAudioFLAC(8); break;
+            case 6600: playAudioFLAC(9); break;
+            case 7200: playAudioFLAC(10); break;
+        }
+        playAudioFLAC(11);
+        
+        ann_running = 0;
+    }
 }
 

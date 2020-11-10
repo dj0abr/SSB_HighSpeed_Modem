@@ -60,15 +60,18 @@ namespace oscardata
             else
                 statics.ostype = 1; // Linux
 
-            // start hsmodem (.exe)
-            modemrunning = statics.StartHSmodem();
-
             // set temp paths
             statics.zip_TXtempfilename = statics.addTmpPath(statics.zip_TXtempfilename);
             statics.zip_RXtempfilename = statics.addTmpPath(statics.zip_RXtempfilename);
             statics.jpg_tempfilename = statics.addTmpPath(statics.jpg_tempfilename);
 
             load_Setup();
+
+            if (cb_autostart.Checked)
+            {
+                // start hsmodem (.exe)
+                modemrunning = statics.StartHSmodem();
+            }
 
             checkBox_small_CheckedChanged(null, null);
 
@@ -219,19 +222,16 @@ namespace oscardata
                 Udp.UdpSendCtrl(txdata);
                 setCAPvolume = -1;
             }
-
-            /*if(modemrunning == false)
-            {
-                // start hsmodem (.exe)
-                modemrunning = statics.StartHSmodem();
-            }*/
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             save_Setup();
-            statics.killall("hsmodem");
-            statics.killall("hsmodem.exe");
+            if (cb_autostart.Checked)
+            {
+                statics.killall("hsmodem");
+                statics.killall("hsmodem.exe");
+            }
             // exit the threads
             statics.running = false;
             Udp.Close();
@@ -624,7 +624,7 @@ namespace oscardata
                     int rest = ArraySend.FileSize - rxbytecounter;
                     if (rest < 0) rest = 0;
                     if(rest > 0)
-                        label_rximage.Text = "RX image: " + ArraySend.rxFilename + " " + rest.ToString() + " bytes";
+                        label_rximage.Text = "RX image: " + ArraySend.rxFilename + " remaining: " + rest.ToString() + " bytes";
                     else
                         label_rximage.Text = "RX image: " + ArraySend.rxFilename;
                     ShowStatus(rxbytecounter, (int)ts.TotalSeconds);
@@ -668,7 +668,9 @@ namespace oscardata
 
             panel_txspectrum.Invalidate();
 
-            progressBar_fifo.Value = statics.PBfifousage;
+            if (statics.PBfifousage < progressBar_fifo.Minimum)         progressBar_fifo.Value = progressBar_fifo.Minimum;
+            else if (statics.PBfifousage >= progressBar_fifo.Maximum)   progressBar_fifo.Value = progressBar_fifo.Maximum-1;
+            else                                                        progressBar_fifo.Value = statics.PBfifousage;
         }
 
         private void panel_constel_Paint(object sender, PaintEventArgs e)
@@ -872,7 +874,12 @@ namespace oscardata
             lastFullName = fullfn;
 
             // random filename for picturebox control (picturebox cannot reload image from actual filename)
-            try { File.Delete(TXimagefilename); } catch { }
+            try {
+                //File.Delete(TXimagefilename); 
+                // delete also older unused files
+                foreach (string f in Directory.EnumerateFiles(statics.addTmpPath(""), "tempTX*.jpg"))
+                    File.Delete(f);
+            } catch { }
             Random randNum = new Random();
             TXimagefilename = statics.addTmpPath("tempTX" + randNum.Next(0, 65000).ToString() + ".jpg");
 
@@ -964,7 +971,7 @@ namespace oscardata
             txcommand = statics.Image;
             rxbytecounter = 0;
             pictureBox_rximage.Image = null;
-            Byte[] imgarr = File.ReadAllBytes(TXimagefilename); // compress temp file name
+            Byte[] imgarr = File.ReadAllBytes(TXimagefilename); // compressed temp file name
             ArraySend.Send(imgarr, statics.Image, TXimagefilename, TXRealFilename);    // compress temp file name and real file name
         }
 
@@ -1185,12 +1192,13 @@ namespace oscardata
 
         private void search_modem()
         {
-            Byte[] txb = new byte[5];
+            Byte[] txb = new byte[6];
             txb[0] = 0x3c;  // ID of this message
             txb[1] = getPBaudioDevice();
             txb[2] = getCAPaudioDevice();
             txb[3] = (Byte)tb_PBvol.Value;
             txb[4] = (Byte)tb_CAPvol.Value;
+            txb[5] = (Byte)cb_announcement.Items.IndexOf(cb_announcement.Text);
 
             Udp.UdpBCsend(txb, GetMyBroadcastIP(), statics.UdpBCport_AppToModem);
 
@@ -1295,7 +1303,7 @@ namespace oscardata
             // and send info to modem
             Udp.UdpSendCtrl(txdata);
 
-            //txcommand = statics.noTX;
+            txcommand = statics.noTX;
             // stop any ongoing transmission
             button_cancelimg_Click(null, null);
         }
@@ -1404,6 +1412,9 @@ namespace oscardata
                     cb_audioCAP.Text = ReadString(sr);
                     tb_PBvol.Value = ReadInt(sr);
                     tb_CAPvol.Value = ReadInt(sr);
+                    s = ReadString(sr);
+                    cb_autostart.Checked = (s == "1");
+                    try { cb_announcement.Text = ReadString(sr); } catch { }
                 }
             }
             catch
@@ -1430,6 +1441,9 @@ namespace oscardata
                     sw.WriteLine(cb_audioCAP.Text);
                     sw.WriteLine(tb_PBvol.Value.ToString());
                     sw.WriteLine(tb_CAPvol.Value.ToString());
+                    sw.WriteLine(cb_autostart.Checked ? "1" : "0");
+                    sw.WriteLine(cb_announcement.Text);
+
                 }
             }
             catch { }

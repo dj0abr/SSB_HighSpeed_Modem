@@ -132,7 +132,7 @@ void measure_speed_syms(int len)
     speed = meanval((int)dspd) * bitsPerSymbol;
     
     // here we have number of elements after 1s
-    printf("%d sym/s\n",speed);
+    //printf("%d sym/s\n",speed);
     
     elems=0;
     lasttim = tim;

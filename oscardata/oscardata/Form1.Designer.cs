@@ -72,6 +72,7 @@
             this.bt_file_ascii = new System.Windows.Forms.Button();
             this.tabPage5 = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.cb_autostart = new System.Windows.Forms.CheckBox();
             this.bt_shutdown = new System.Windows.Forms.Button();
             this.tb_shutdown = new System.Windows.Forms.TextBox();
             this.bt_resetmodem = new System.Windows.Forms.Button();
@@ -83,10 +84,13 @@
             this.tb_PBvol = new System.Windows.Forms.TrackBar();
             this.cb_audioPB = new System.Windows.Forms.ComboBox();
             this.label3 = new System.Windows.Forms.Label();
-            this.textBox3 = new System.Windows.Forms.TextBox();
             this.cb_audioCAP = new System.Windows.Forms.ComboBox();
             this.label4 = new System.Windows.Forms.Label();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.textBox5 = new System.Windows.Forms.TextBox();
+            this.cb_announcement = new System.Windows.Forms.ComboBox();
+            this.textBox4 = new System.Windows.Forms.TextBox();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             this.tb_callsign = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cb_stampcall = new System.Windows.Forms.CheckBox();
@@ -96,6 +100,7 @@
             this.timer_searchmodem = new System.Windows.Forms.Timer(this.components);
             this.progressBar_fifo = new System.Windows.Forms.ProgressBar();
             this.label_fifo = new System.Windows.Forms.Label();
+            this.textBox3 = new System.Windows.Forms.TextBox();
             this.statusStrip1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -532,20 +537,34 @@
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.cb_autostart);
             this.groupBox4.Controls.Add(this.bt_shutdown);
             this.groupBox4.Controls.Add(this.tb_shutdown);
             this.groupBox4.Controls.Add(this.bt_resetmodem);
             this.groupBox4.Controls.Add(this.textBox2);
+            this.groupBox4.Controls.Add(this.textBox3);
             this.groupBox4.Location = new System.Drawing.Point(12, 259);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(384, 105);
+            this.groupBox4.Size = new System.Drawing.Size(674, 105);
             this.groupBox4.TabIndex = 15;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Maintenance";
             // 
+            // cb_autostart
+            // 
+            this.cb_autostart.AutoSize = true;
+            this.cb_autostart.Checked = true;
+            this.cb_autostart.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_autostart.Location = new System.Drawing.Point(17, 23);
+            this.cb_autostart.Name = "cb_autostart";
+            this.cb_autostart.Size = new System.Drawing.Size(131, 17);
+            this.cb_autostart.TabIndex = 4;
+            this.cb_autostart.Text = "AUTO start HSmodem";
+            this.cb_autostart.UseVisualStyleBackColor = true;
+            // 
             // bt_shutdown
             // 
-            this.bt_shutdown.Location = new System.Drawing.Point(17, 19);
+            this.bt_shutdown.Location = new System.Drawing.Point(491, 19);
             this.bt_shutdown.Name = "bt_shutdown";
             this.bt_shutdown.Size = new System.Drawing.Size(155, 23);
             this.bt_shutdown.TabIndex = 4;
@@ -558,7 +577,7 @@
             this.tb_shutdown.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.tb_shutdown.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tb_shutdown.ForeColor = System.Drawing.Color.Red;
-            this.tb_shutdown.Location = new System.Drawing.Point(17, 48);
+            this.tb_shutdown.Location = new System.Drawing.Point(491, 48);
             this.tb_shutdown.Multiline = true;
             this.tb_shutdown.Name = "tb_shutdown";
             this.tb_shutdown.Size = new System.Drawing.Size(155, 50);
@@ -567,12 +586,13 @@
             // 
             // bt_resetmodem
             // 
-            this.bt_resetmodem.Location = new System.Drawing.Point(189, 19);
+            this.bt_resetmodem.Location = new System.Drawing.Point(183, 17);
             this.bt_resetmodem.Name = "bt_resetmodem";
             this.bt_resetmodem.Size = new System.Drawing.Size(117, 23);
             this.bt_resetmodem.TabIndex = 6;
             this.bt_resetmodem.Text = "Reset RX Modem";
             this.bt_resetmodem.UseVisualStyleBackColor = true;
+            this.bt_resetmodem.Visible = false;
             this.bt_resetmodem.Click += new System.EventHandler(this.bt_resetmodem_Click);
             // 
             // textBox2
@@ -580,12 +600,13 @@
             this.textBox2.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.textBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.textBox2.ForeColor = System.Drawing.Color.Black;
-            this.textBox2.Location = new System.Drawing.Point(189, 48);
+            this.textBox2.Location = new System.Drawing.Point(183, 46);
             this.textBox2.Multiline = true;
             this.textBox2.Name = "textBox2";
             this.textBox2.Size = new System.Drawing.Size(126, 50);
             this.textBox2.TabIndex = 11;
             this.textBox2.Text = "in case the RX has sync\r\nproblems, it can be\r\nre-initialized here.";
+            this.textBox2.Visible = false;
             // 
             // groupBox3
             // 
@@ -595,7 +616,6 @@
             this.groupBox3.Controls.Add(this.tb_PBvol);
             this.groupBox3.Controls.Add(this.cb_audioPB);
             this.groupBox3.Controls.Add(this.label3);
-            this.groupBox3.Controls.Add(this.textBox3);
             this.groupBox3.Controls.Add(this.cb_audioCAP);
             this.groupBox3.Controls.Add(this.label4);
             this.groupBox3.Location = new System.Drawing.Point(12, 146);
@@ -669,18 +689,6 @@
             this.label3.TabIndex = 8;
             this.label3.Text = "Audio Playback Device:";
             // 
-            // textBox3
-            // 
-            this.textBox3.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox3.ForeColor = System.Drawing.Color.Black;
-            this.textBox3.Location = new System.Drawing.Point(138, 79);
-            this.textBox3.Multiline = true;
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(177, 19);
-            this.textBox3.TabIndex = 12;
-            this.textBox3.Text = "(HDMI is usually not used)";
-            // 
             // cb_audioCAP
             // 
             this.cb_audioCAP.FormattingEnabled = true;
@@ -701,16 +709,77 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.textBox5);
+            this.groupBox2.Controls.Add(this.cb_announcement);
+            this.groupBox2.Controls.Add(this.textBox4);
+            this.groupBox2.Controls.Add(this.textBox1);
             this.groupBox2.Controls.Add(this.tb_callsign);
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.cb_stampcall);
             this.groupBox2.Controls.Add(this.cb_savegoodfiles);
             this.groupBox2.Location = new System.Drawing.Point(12, 13);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(384, 126);
+            this.groupBox2.Size = new System.Drawing.Size(674, 126);
             this.groupBox2.TabIndex = 13;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Personal Settings";
+            // 
+            // textBox5
+            // 
+            this.textBox5.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox5.ForeColor = System.Drawing.Color.Black;
+            this.textBox5.Location = new System.Drawing.Point(261, 92);
+            this.textBox5.Multiline = true;
+            this.textBox5.Name = "textBox5";
+            this.textBox5.Size = new System.Drawing.Size(34, 19);
+            this.textBox5.TabIndex = 20;
+            this.textBox5.Text = "every";
+            // 
+            // cb_announcement
+            // 
+            this.cb_announcement.FormattingEnabled = true;
+            this.cb_announcement.Items.AddRange(new object[] {
+            "off",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10"});
+            this.cb_announcement.Location = new System.Drawing.Point(296, 90);
+            this.cb_announcement.Name = "cb_announcement";
+            this.cb_announcement.Size = new System.Drawing.Size(56, 21);
+            this.cb_announcement.TabIndex = 19;
+            this.cb_announcement.Text = "4";
+            // 
+            // textBox4
+            // 
+            this.textBox4.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox4.ForeColor = System.Drawing.Color.Black;
+            this.textBox4.Location = new System.Drawing.Point(361, 92);
+            this.textBox4.Multiline = true;
+            this.textBox4.Name = "textBox4";
+            this.textBox4.Size = new System.Drawing.Size(75, 19);
+            this.textBox4.TabIndex = 18;
+            this.textBox4.Text = "transmissions";
+            // 
+            // textBox1
+            // 
+            this.textBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox1.ForeColor = System.Drawing.Color.Black;
+            this.textBox1.Location = new System.Drawing.Point(259, 68);
+            this.textBox1.Multiline = true;
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(253, 19);
+            this.textBox1.TabIndex = 17;
+            this.textBox1.Text = "send announcement before pic/file transfer";
             // 
             // tb_callsign
             // 
@@ -758,15 +827,13 @@
             this.cb_speed.FormattingEnabled = true;
             this.cb_speed.Items.AddRange(new object[] {
             "3000 QPSK BW: 1700 Hz ",
-            "3150 QPSK BW: 1800 Hz ",
-            "3675 QPSK BW: 2100 Hz ",
             "4000 QPSK BW: 2400 Hz ",
             "4410 QPSK BW: 2500 Hz (QO-100)",
             "4800 QPSK BW: 2700 Hz",
-            "5500 8PSK BW: 2300 Hz",
-            "6000 8PSK BW: 2500 Hz (QO-100)",
-            "6600 8PSK BW: 2600 Hz",
-            "7200 8PSK BW: 2700 Hz"});
+            "5500 8APSK BW: 2300 Hz",
+            "6000 8APSK BW: 2500 Hz (QO-100)",
+            "6600 8APSK BW: 2600 Hz",
+            "7200 8APSK BW: 2700 Hz"});
             this.cb_speed.Location = new System.Drawing.Point(636, 593);
             this.cb_speed.Name = "cb_speed";
             this.cb_speed.Size = new System.Drawing.Size(324, 21);
@@ -806,6 +873,18 @@
             this.label_fifo.Size = new System.Drawing.Size(55, 13);
             this.label_fifo.TabIndex = 14;
             this.label_fifo.Text = "TX Buffer:";
+            // 
+            // textBox3
+            // 
+            this.textBox3.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox3.ForeColor = System.Drawing.Color.Black;
+            this.textBox3.Location = new System.Drawing.Point(15, 46);
+            this.textBox3.Multiline = true;
+            this.textBox3.Name = "textBox3";
+            this.textBox3.Size = new System.Drawing.Size(151, 50);
+            this.textBox3.TabIndex = 12;
+            this.textBox3.Text = "only uncheck if modem runs on a separate PC";
             // 
             // Form1
             // 
@@ -909,7 +988,6 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ComboBox cb_audioPB;
         private System.Windows.Forms.TextBox textBox2;
-        private System.Windows.Forms.TextBox textBox3;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.GroupBox groupBox2;
@@ -919,6 +997,12 @@
         private System.Windows.Forms.TrackBar tb_CAPvol;
         private System.Windows.Forms.ProgressBar progressBar_fifo;
         private System.Windows.Forms.Label label_fifo;
+        private System.Windows.Forms.CheckBox cb_autostart;
+        private System.Windows.Forms.TextBox textBox5;
+        private System.Windows.Forms.ComboBox cb_announcement;
+        private System.Windows.Forms.TextBox textBox4;
+        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox textBox3;
     }
 }
 
