@@ -89,7 +89,7 @@ void showbytestringf(char* title, float* data, int anz)
 {
     printf("%s. Len %d: ", title, anz);
     for (int i = 0; i < anz; i++)
-        printf("%.6f ", data[i]);
+        printf("%7.4f ", data[i]);
     printf("\n");
 }
 

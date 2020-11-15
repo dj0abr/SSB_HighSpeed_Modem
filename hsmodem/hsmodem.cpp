@@ -91,6 +91,7 @@ int UdpDataPort_fromGR_I_Q = 40137;
 int speedmode = 2;
 int bitsPerSymbol = 2;      // QPSK=2, 8PSK=3
 int constellationSize = 4;  // QPSK=4, 8PSK=8
+int psk8mode=0;             // 0=APSK8, 1=PSK8
 
 char localIP[] = { "127.0.0.1" };
 char ownfilename[] = { "hsmodem" };
@@ -202,7 +203,7 @@ int main(int argc, char* argv[])
         //doArraySend();
 
         if (demodulator() == 0)
-            sleep_ms(100);
+            sleep_ms(10);
     }
     printf("stopped: %d\n", keeprunning);
 
@@ -242,6 +243,14 @@ SPEEDRATE sr[8] = {
 
 void startModem()
 {
+    if (speedmode >= 8)
+    {
+        speedmode = speedmode - 4;
+        psk8mode = 1;
+    }
+    else
+        psk8mode = 0;
+
     bitsPerSymbol = sr[speedmode].bpsym;
     constellationSize = (1 << bitsPerSymbol); // QPSK=4, 8PSK=8
 
@@ -394,7 +403,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 
     //if (getSending() == 1) return;   // already sending (Array sending)
 
-    if (minfo == 0)
+    if (minfo == 0 || minfo == 3)
     {
         // this is the first frame of a larger file
         sendAnnouncement();
@@ -403,8 +412,8 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // caprate: samples/s. This are symbols: caprate/txinterpolfactor
         // and bits: symbols * bitsPerSymbol
         // and bytes/second: bits/8 = (caprate/txinterpolfactor) * bitsPerSymbol / 8
-        // one frame has 258 bytes, so we need for 5s: 5* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
-        int numframespreamble = 5 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
+        // one frame has 258 bytes, so we need for 6s: 6* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
+        int numframespreamble = 6 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
         for (int i = 0; i < numframespreamble; i++)
             toGR_sendData(pdata + 2, type, minfo);
     }
@@ -460,7 +469,7 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         if (++fnd >= (wt * ws))
         {
             fnd = 0;
-            //printf("no signal detected %d, reset RX modem\n", wt);
+            printf("no signal detected %d, reset RX modem\n", wt);
             resetModem();
         }
     }

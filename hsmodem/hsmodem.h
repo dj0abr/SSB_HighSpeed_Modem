@@ -1,3 +1,4 @@
+#pragma once
 
 #ifdef _WIN32
 #define _WIN32_
@@ -60,6 +61,7 @@
 #include "frameformat.h"
 #include "fec.h"
 #include "udp.h"
+#include "symboltracker.h"
 
 #define jpg_tempfilename "rxdata.jpg"
 
@@ -129,6 +131,14 @@ void exit_fft();
 void showbytestringf(char* title, float* data, int anz);
 uint16_t* make_waterfall(float fre, int* retlen);
 
+void km_symtrack_cccf_create(int          _ftype,
+    unsigned int _k,
+    unsigned int _m,
+    float        _beta,
+    int          _ms);
+void km_symtrack_cccf_reset(int mode);
+void km_symtrack_cccf_set_bandwidth(float      _bw);
+void km_symtrack_execute(liquid_float_complex _x, liquid_float_complex* _y, unsigned int* _ny, unsigned int* psym_out);
 
 extern int speedmode;
 extern int bitsPerSymbol;
@@ -146,6 +156,8 @@ extern int announcement;
 extern int ann_running;
 extern int transmissions;
 extern int linespeed;
+extern uint8_t maxLevel;
+extern int psk8mode;
 
 #ifdef _LINUX_
 int isRunning(char* prgname);

@@ -67,6 +67,7 @@
     <Compile Include="imagehandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="receivefile.cs" />
     <Compile Include="udp.cs" />
     <Compile Include="zip.cs" />
     <EmbeddedResource Include="Form1.resx">

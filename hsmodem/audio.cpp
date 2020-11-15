@@ -369,7 +369,7 @@ void setPBvolume(int v)
     float vf = v;
     vf /= 100;
 
-    printf("set PB volume to:%d / %f [0..1]\n", v, vf );
+    //printf("set PB volume to:%d / %f [0..1]\n", v, vf );
 
     selectPBdevice();
     if (!BASS_SetVolume(vf))
@@ -383,7 +383,7 @@ void setCAPvolume(int v)
     float vf = v;
     vf /= 100;
 
-    printf("set CAP volume to:%d / %f [0..1]\n", v, vf);
+    //printf("set CAP volume to:%d / %f [0..1]\n", v, vf);
 
     selectCAPdevice();
     if (!BASS_RecordSetInput(-1,BASS_INPUT_ON,vf))
@@ -462,7 +462,7 @@ void PB_UNLOCK() { pthread_mutex_unlock(&pb_crit_sec); }
 
 #define AUDIO_BUFFERMAXTIME 2  // fifo can buffer this time in [s]
 #define AUDIO_PLAYBACK_BUFLEN (48000 * 10) // space for 10 seconds of samples
-#define AUDIO_CAPTURE_BUFLEN  (48000 * 10)
+#define AUDIO_CAPTURE_BUFLEN  (48000)        // space for 1s
 
 int cap_wridx=0;
 int cap_rdidx=0;
@@ -487,6 +487,11 @@ void init_pipes()
 // overwrite old data if the fifo is full
 void cap_write_fifo(float sample)
 {
+    if (((cap_wridx + 1) % AUDIO_CAPTURE_BUFLEN) == cap_rdidx)
+    {
+        printf("cap fifo full\n");
+    }
+
 	CAP_LOCK;
     cap_buffer[cap_wridx] = sample;
     if(++cap_wridx >= AUDIO_CAPTURE_BUFLEN) cap_wridx = 0;

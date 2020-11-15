@@ -39,9 +39,9 @@ namespace oscardata
         Byte frameinfo = (Byte)statics.FirstFrame;
         String TXfilename;
         int rxbytecounter = 0;
-        DateTime starttime;
         String old_tsip = "";
         bool modemrunning = false;
+        receivefile recfile = new receivefile();
 
         public Form1()
         {
@@ -240,9 +240,7 @@ namespace oscardata
         // RX timer
         int rxstat = 0;
         int speed;
-        int tmpnum = 0;
-        int file_lostframes = 0;
-        int last_fileid = 0;
+        int maxlevel = 0;
         private void timer_udprx_Tick(object sender, EventArgs e)
         {
             while (true)
@@ -260,383 +258,92 @@ namespace oscardata
                 speed = rxd[5];
                 speed <<= 8;
                 speed += rxd[6];
-                int dummy3 = rxd[7];
+                maxlevel = rxd[7];
                 int dummy4 = rxd[8];
                 int dummy5 = rxd[9];
 
-                if (rxstat == 4)
-                {
-                    framelost++;
-                    file_lostframes++;
-                }
-                calcBer(rxfrmnum);
+                rxbytecounter += statics.UdpBlocklen;
 
-                if (minfo == statics.FirstFrame)
-                    file_lostframes = 0;
+                trackBar_maxlevel.Value = maxlevel;
+                int v1 = 255;
+                int v2 = 220;
+                if (maxlevel < 20 || maxlevel > 70) trackBar_maxlevel.BackColor = Color.FromArgb(v1,v2,v2);
+                else if (maxlevel < 30 || maxlevel > 60) trackBar_maxlevel.BackColor = Color.FromArgb(v1, v1, v2);
+                else trackBar_maxlevel.BackColor = Color.FromArgb(v2, v1, v2);
 
-                    Byte[] rxdata = new byte[rxd.Length - 10];
+                Byte[] rxdata = new byte[rxd.Length - 10];
                 Array.Copy(rxd, 10, rxdata, 0, rxd.Length - 10);
 
                 //Console.WriteLine("minfo:" + minfo + " data:" + rxdata[0].ToString("X2") + " " + rxdata[1].ToString("X2"));
 
-                if (minfo == statics.FirstFrame)
-                {
-                    rxbytecounter = rxdata.Length;
-                    starttime = DateTime.UtcNow;
-                }
-                else
-                {
-                    rxbytecounter += rxdata.Length;
-                }
-                TimeSpan ts = DateTime.UtcNow - starttime;
-                ts += new TimeSpan(0, 0, 0, 1);
-
-                // ===== ASCII RX ================================================
-                if (rxtype == statics.AsciiFile)
-                {
-                    // if this is the first frame of a file transfer
-                    // then read and remove the file info header
-                    if (minfo == statics.FirstFrame || minfo == statics.SingleFrame)
-                    {
-                        //Console.WriteLine("first, single");
-                        rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (rxdata == null) return;
-                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
-                        last_fileid = ArraySend.FileID;
-                    }
-                    else
-                        last_fileid = 0;
-
-                    // collect all received data into zip_RXtempfilename
-                    Byte[] ba = null;
-                    Byte[] nba;
-                    try
-                    {
-                        ba = File.ReadAllBytes(statics.zip_RXtempfilename);
-                    }
-                    catch { }
-                    
-                    if (ba != null)
-                    {
-                        //Console.WriteLine("write next");
-                        nba = new Byte[ba.Length + rxdata.Length];
-                        Array.Copy(ba, nba, ba.Length);
-                        Array.Copy(rxdata, 0, nba, ba.Length, rxdata.Length);
-                    }
-                    else
-                    {
-                        //Console.WriteLine("write first");
-                        nba = new Byte[rxdata.Length];
-                        Array.Copy(rxdata, nba, rxdata.Length);
-                    }
-                    File.WriteAllBytes(statics.zip_RXtempfilename, nba);
-                    long filesize = 0;
-
-                    // check if transmission is finished
-                    if (minfo == statics.LastFrame || minfo == statics.SingleFrame)
-                    {
-                        // statics.zip_RXtempfilename has the received data, but maybee too long (multiple of payload length)
-                        // reduce for the real file length
-                        Byte[] fc = File.ReadAllBytes(statics.zip_RXtempfilename);
-                        Byte[] fdst = new byte[ArraySend.FileSize];
-                        if(fc.Length < ArraySend.FileSize)
-                        {
-                            Console.WriteLine("len=" + fc.Length + " fz=" + ArraySend.FileSize);
-                            return;
-                        }
-                        Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
-                        File.WriteAllBytes(statics.zip_RXtempfilename, fdst);
-
-                        //Console.WriteLine("size:"+ ArraySend.FileSize.ToString());
-
-                        //Console.WriteLine("last");
-                        // unzip received data and store result in file: unzipped_RXtempfilename
-                        rtb_RXfile.Text = "";
-                        ZipStorer zs = new ZipStorer();
-                        String fl = zs.unzipFile(statics.zip_RXtempfilename);
-                        if (fl != null)
-                        {
-                            // save file
-                            int idx = fl.LastIndexOf('/');
-                            if (idx == -1) idx = fl.LastIndexOf('\\');
-                            String fdest = fl.Substring(idx + 1);
-                            fdest = statics.getHomePath("", fdest);
-                            try { File.Delete(fdest); } catch { }
-                            File.Move(fl, fdest);
-                            filesize = statics.GetFileSize(fdest);
-
-                            String serg = File.ReadAllText(fdest);
-                            printText(rtb_RXfile, serg);
-                        }
-                        else
-                            printText(rtb_RXfile, "unzip failed");
-                        File.Delete(statics.zip_RXtempfilename);
-                    }
-
-                    int rest = ArraySend.FileSize - rxbytecounter;
-                    if (rest < 0) rest = 0;
-                    if (rest > 0)
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + rest.ToString() + " bytes";
-                    else
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + filesize + " bytes";
-
-                    if (minfo == statics.LastFrame)
-                        ShowStatus((int)filesize, (int)ts.TotalSeconds);
-                    else
-                        ShowStatus(rxbytecounter, (int)ts.TotalSeconds);
-                }
-
-                // ===== HTML File RX ================================================
-                if (rxtype == statics.HTMLFile)
-                {
-                    // if this is the first frame of a file transfer
-                    // then read and remove the file info header
-                    if (minfo == statics.FirstFrame)
-                    {
-                        rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
-                        last_fileid = ArraySend.FileID;
-                    }
-                    else
-                        last_fileid = 0;
-
-                    Byte[] ba = null;
-                    Byte[] nba;
-                    try
-                    {
-                        ba = File.ReadAllBytes(statics.zip_RXtempfilename);
-                    }
-                    catch { }
-
-                    if (ba != null)
-                    {
-                        nba = new Byte[ba.Length + rxdata.Length];
-                        Array.Copy(ba, nba, ba.Length);
-                        Array.Copy(rxdata, 0, nba, ba.Length, rxdata.Length);
-                    }
-                    else
-                    {
-                        nba = new Byte[rxdata.Length];
-                        Array.Copy(rxdata, nba, rxdata.Length);
-                    }
-                    File.WriteAllBytes(statics.zip_RXtempfilename, nba);
-                    long filesize = 0;
-                    if (minfo == statics.LastFrame)
-                    {
-                        // unzip received data
-                        rtb_RXfile.Text = "";
-                        ZipStorer zs = new ZipStorer();
-                        // unzip returns filename+path of unzipped file
-                        String fl = zs.unzipFile(statics.zip_RXtempfilename);
-                        if (fl != null)
-                        {
-                            // save file
-                            int idx = fl.LastIndexOf('/');
-                            if (idx == -1) idx = fl.LastIndexOf('\\');
-                            String fdest = fl.Substring(idx + 1);
-                            fdest = statics.getHomePath("", fdest);
-                            try { File.Delete(fdest); } catch { }
-                            File.Move(fl, fdest);
-                            filesize = statics.GetFileSize(fdest);
-
-                            rxbytecounter = (int)statics.GetFileSize(fdest);
-                            String serg = File.ReadAllText(fdest);
-                            printText(rtb_RXfile, serg);
-                            try
-                            {
-                                OpenUrl(fdest);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(ex.ToString());
-                            }
-                        }
-                        else
-                            printText(rtb_RXfile, "unzip failed");
-                    }
-
-                    int rest = ArraySend.FileSize - rxbytecounter;
-                    if (rest < 0) rest = 0;
-                    if (rest > 0)
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + rest.ToString() + " bytes";
-                    else
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + filesize + " bytes";
-
-                    if (minfo == statics.LastFrame)
-                        ShowStatus(ArraySend.FileSize, (int)ts.TotalSeconds);
-                    else
-                        ShowStatus(rxbytecounter, (int)ts.TotalSeconds);
-                }
-
-                // ===== Binary File RX ================================================
-                if (rxtype == statics.BinaryFile)
-                {
-                    // if this is the first frame of a file transfer
-                    // then read and remove the file info header
-                    if (minfo == statics.FirstFrame || minfo == statics.SingleFrame)
-                    {
-                        //Console.WriteLine("first, single");
-                        rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (last_fileid == ArraySend.FileID) return;    // got first frame for this ID already
-                        last_fileid = ArraySend.FileID;
-                    }
-                    else
-                        last_fileid = 0;
-
-                    // collect all received data into zip_RXtempfilename
-                    Byte[] ba = null;
-                    Byte[] nba;
-                    try
-                    {
-                        ba = File.ReadAllBytes(statics.zip_RXtempfilename);
-                    }
-                    catch { }
-
-                    if (ba != null)
-                    {
-                        //Console.WriteLine("write next");
-                        nba = new Byte[ba.Length + rxdata.Length];
-                        Array.Copy(ba, nba, ba.Length);
-                        Array.Copy(rxdata, 0, nba, ba.Length, rxdata.Length);
-                    }
-                    else
-                    {
-                        //Console.WriteLine("write first");
-                        nba = new Byte[rxdata.Length];
-                        Array.Copy(rxdata, nba, rxdata.Length);
-                    }
-                    File.WriteAllBytes(statics.zip_RXtempfilename, nba);
-                    long filesize = 0;
-
-                    // check if transmission is finished
-                    if (minfo == statics.LastFrame || minfo == statics.SingleFrame)
-                    {
-                        // statics.zip_RXtempfilename has the received data, but maybee too long (multiple of payload length)
-                        // reduce for the real file length
-                        Byte[] fc = File.ReadAllBytes(statics.zip_RXtempfilename);
-                        Byte[] fdst = new byte[ArraySend.FileSize];
-                        if (fc.Length < ArraySend.FileSize)
-                        {
-                            Console.WriteLine("len=" + fc.Length + " fz=" + ArraySend.FileSize);
-                            return;
-                        }
-                        Console.WriteLine("copy final binary file");
-                        Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
-                        File.WriteAllBytes(statics.zip_RXtempfilename, fdst);
-
-                        //Console.WriteLine("last");
-                        // unzip received data and store result in file: unzipped_RXtempfilename
-                        rtb_RXfile.Text = "";
-                        ZipStorer zs = new ZipStorer();
-                        String fl = zs.unzipFile(statics.zip_RXtempfilename);
-                        if (fl != null)
-                        {
-                            int idx = fl.LastIndexOf('/');
-                            if(idx == -1) idx = fl.LastIndexOf('\\');
-                            String fdest = fl.Substring(idx + 1);
-                            fdest = statics.getHomePath("", fdest);
-                            try { File.Delete(fdest); } catch { }
-                            File.Move(fl, fdest);
-                            filesize = statics.GetFileSize(fdest);
-                            //File.WriteAllBytes(fl, nba);
-                            printText(rtb_RXfile, "binary file received\r\n");
-                            printText(rtb_RXfile, "--------------------\r\n\r\n");
-                            printText(rtb_RXfile, "file size         : " + filesize + " byte\r\n\r\n");
-                            printText(rtb_RXfile, "stored in         : " + fdest + "\r\n\r\n");
-                            printText(rtb_RXfile, "transmission time : " + ((int)ts.TotalSeconds).ToString() + " seconds" + "\r\n\r\n");
-                            printText(rtb_RXfile, "transmission speed: " + ((int)(filesize*8/ts.TotalSeconds)).ToString() + " bit/s" + "\r\n\r\n");
-                        }
-                        else
-                            printText(rtb_RXfile, "unzip failed");
-                        File.Delete(statics.zip_RXtempfilename);
-                    }
-
-                    int rest = ArraySend.FileSize - rxbytecounter;
-                    if (rest < 0) rest = 0;
-                    if (rest > 0)
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + rest.ToString() + " bytes";
-                    else
-                        label_rxfile.Text = "RX file: " + ArraySend.rxFilename + " " + filesize + " bytes";
-
-                    if (minfo == statics.LastFrame)
-                        ShowStatus((int)filesize, (int)ts.TotalSeconds);
-                    else
-                        ShowStatus(rxbytecounter, (int)ts.TotalSeconds);
-                }
-
-                // ===== IMAGE RX ================================================
+                // ========= receive file ==========
+                // handle file receive
                 if (rxtype == statics.Image)
                 {
-                    // if this is the first frame of a file transfer
-                    // then read and remove the file info header
-                    if (minfo == statics.FirstFrame)
+                    if (recfile.receive(rxd))
                     {
-                        rxdata = ArraySend.GetAndRemoveHeader(rxdata);
-                        if (rxdata == null) return;
-                    }
-
-                    ih.receive_image(rxdata, minfo);
-
-                    // show currect contents of rxtemp.jpg in RX picturebox
-                    try
-                    {
-                        String fn = statics.addTmpPath("temp" + tmpnum.ToString() + ".jpg");
-                        try
+                        if (recfile.filename != null && recfile.filename.Length > 0 && minfo != statics.FirstFrame)
                         {
-                            File.Delete(fn);
+                            // reception complete, show stored file
+                            Console.WriteLine("load " + recfile.filename);
+                            pictureBox_rximage.BackgroundImage = Image.FromFile(recfile.filename);
+                            pictureBox_rximage.Invalidate();
                         }
-                        catch { }
-                        tmpnum++;
-                        fn = statics.addTmpPath("temp" + tmpnum.ToString() + ".jpg");
-                        File.Copy(statics.jpg_tempfilename, fn);
-
-                        try
+                        if (recfile.pbmp != null)
                         {
-                            if(statics.GetFileSize(fn) > 1200)
-                                pictureBox_rximage.BackgroundImage = Image.FromFile(fn);
-                        }
-                        catch {
-                        }
-
-                        if (minfo == statics.LastFrame)
-                        {
-                            // file is complete, save in RX storage
-                            // remove possible path from filename
-                            String fname = ArraySend.rxFilename;
-                            int idx = fname.IndexOfAny(new char[] {'\\','/' });
-                            if (idx != -1)
+                            // in case we can display portions of an image return this portion
+                            try
                             {
-                                try
-                                {
-                                    fname = fname.Substring(idx + 1);
-                                } catch{ }
+                                pictureBox_rximage.BackgroundImage = recfile.pbmp;
                             }
-                            if (!cb_savegoodfiles.Checked || (file_lostframes == 0 && cb_savegoodfiles.Checked))
-                            {
-                                // add home path and RXstorage path
-                                String fnx = statics.getHomePath(statics.RXimageStorage, fname);
-                                File.Copy(fn, fnx);
-                            }
+                            catch { }
                         }
                     }
-                    catch { }
+                }
 
-                    int rest = ArraySend.FileSize - rxbytecounter;
-                    if (rest < 0) rest = 0;
-                    if(rest > 0)
-                        label_rximage.Text = "RX image: " + ArraySend.rxFilename + " remaining: " + rest.ToString() + " bytes";
-                    else
-                        label_rximage.Text = "RX image: " + ArraySend.rxFilename;
-                    ShowStatus(rxbytecounter, (int)ts.TotalSeconds);
+                if (rxtype == statics.AsciiFile)
+                {
+                    if(recfile.receive(rxd))
+                    {
+                        // ASCII file received, show in window
+                        String serg = File.ReadAllText(recfile.filename);
+                        printText(rtb_RXfile, serg);
+                    }
+                }
+
+                if (rxtype == statics.HTMLFile)
+                {
+                    if (recfile.receive(rxd))
+                    {
+                        // HTML file received, show in window
+                        String serg = File.ReadAllText(recfile.filename);
+                        printText(rtb_RXfile, serg);
+                        // and show in browser
+                        OpenUrl(recfile.filename);
+                    }
+                }
+
+                if (rxtype == statics.BinaryFile)
+                {
+                    if (recfile.receive(rxd))
+                    {
+                        // Binary file received, show statistics in window
+                        printText(rtb_RXfile, "binary file received\r\n");
+                        printText(rtb_RXfile, "--------------------\r\n\r\n");
+                        printText(rtb_RXfile, "transmission time : " + ((int)recfile.runtime.TotalSeconds).ToString() + " seconds" + "\r\n\r\n");
+                        printText(rtb_RXfile, "transmission speed: " + ((int)(recfile.filesize * 8 / recfile.runtime.TotalSeconds)).ToString() + " bit/s" + "\r\n\r\n");
+                        printText(rtb_RXfile, "file size         : " + recfile.filesize + " byte\r\n\r\n");
+                        printText(rtb_RXfile, "file name         : " + recfile.filename + "\r\n\r\n");
+                    }
                 }
 
                 // ===== BER Test ================================================
                 if (rxtype == statics.BERtest)
                 {
-                    RXstatus.Text = "BER: " + ber.ToString("E3") + " " + rxframecounter.ToString() + " frames received OK";
-
-                    BERcheck(rxdata);
+                    BERcheck(rxdata, rxfrmnum,minfo);
                 }
+
+                ShowStatus(rxtype, minfo);
             }
         }
 
@@ -894,18 +601,21 @@ namespace oscardata
             Image img = new Bitmap(fullfn);
             String cs = tb_callsign.Text;
             if (cb_stampcall.Checked == false) cs = "";
+            String inf = tb_info.Text;
+            if (cb_stampinfo.Checked == false) inf = "";
             if (!checkBox_big.Checked)
             {
-                img = ih.ResizeImage(img, 320, 240, cs);
+                img = ih.ResizeImage(img, 320, 240, cs, inf);
                 // set quality by reducing the file size and save under default name
                 ih.SaveJpgAtFileSize(img, TXimagefilename, max_size / 2);
             }
             else
             {
-                img = ih.ResizeImage(img, 640, 480, cs);
+                img = ih.ResizeImage(img, 640, 480, cs, inf);
                 // set quality by reducing the file size and save under default name
                 ih.SaveJpgAtFileSize(img, TXimagefilename, max_size);
             }
+
             pictureBox_tximage.Load(TXimagefilename);
             TXRealFileSize = statics.GetFileSize(TXimagefilename);
             ShowTXstatus();
@@ -977,11 +687,8 @@ namespace oscardata
 
         private void button_startBERtest_Click(object sender, EventArgs e)
         {
-            ber = 0;
-            framelost = 0;
-            totallostframes = 0;
-            last_rxfrmnum = -1;
             rtb.Text = "";
+            missBlocks = 0;
             frameinfo = (Byte)statics.FirstFrame;
             txcommand = statics.BERtest;
         }
@@ -991,36 +698,23 @@ namespace oscardata
             txcommand = statics.noTX;
         }
 
-        DateTime dt = DateTime.Now;
         int rxframecounter = 0;
-        int framelost = 0;
-        int last_rxfrmnum = -1;
-        double ber = 0;
-        int totallostframes = 0;
-
-        void calcBer(int rxfrmnum)
+        int lastfrmnum = 0;
+        int missBlocks = 0;
+        private void BERcheck(Byte[] rxdata, int frmnum, int minfo)
         {
-            if (last_rxfrmnum == -1)
-            {
-                last_rxfrmnum = rxfrmnum;
-                return;
-            }
+            if (minfo == statics.FirstFrame)
+                rxframecounter = 0;
 
-            // calc gap
-            int gap = ((rxfrmnum+1024) - last_rxfrmnum) % 1024;
-            rxframecounter += gap;
-            totallostframes += (gap - 1);
+            if (lastfrmnum == frmnum) return;
+            lastfrmnum = frmnum;
 
-            int totalbits = rxframecounter * 258 * 8;
-            int errorbits = totallostframes * 258 * 8;
-            ber = (double)totallostframes / (double)rxframecounter;
+            rxframecounter++;
 
-            last_rxfrmnum = rxfrmnum;
-        }
-
-        private void BERcheck(Byte[] rxdata)
-        {
-            String line =   "RX: " + rxframecounter.ToString().PadLeft(6, ' ') + " ";
+            missBlocks += (frmnum - rxframecounter);
+            if (missBlocks < 0) missBlocks = 0;
+            String line = "RX: " + frmnum.ToString().PadLeft(6, ' ') + " "; // + rxframecounter + " " + missBlocks + " ";
+            rxframecounter = frmnum;
 
             // print payload (must be printable chars)
             line += Encoding.UTF8.GetString(rxdata).Substring(0, 50) + " ...";
@@ -1060,28 +754,72 @@ namespace oscardata
 
             line += " " + bits.ToString() + " " + sbit + "  " + bytes.ToString() + " " + sbyt;
 
-            line += " BER: " + string.Format("{0:#.##E+0}", ber);  // ber.ToString("E3");
-
             line += "\r\n";
             printText(rtb,line);
-
-            int fl = framelost;
-            if (fl <= 1) fl = 0;
-            String s = "Speed: " + speed.ToString() + " bit/s,  Lost Frames: " + fl.ToString();
-            toolStripStatusLabel.Text = s;
         }
 
-        private void ShowStatus(int rxbytecounter, int totalseconds)
+        int[] blockres = new int[2];
+        private void ShowStatus(int rxtype, int minfo)
         {
-            int fl = framelost;
-            if (fl <= 1) fl = 0;
-            String s = "Speed: " + speed.ToString() + " bit/s,  Lost Frames: " + fl.ToString();
-            toolStripStatusLabel.Text = s;
+            if (minfo == statics.FirstFrame)
+                rxbytecounter = 0;
 
-            int rspeed = 0;
-            if (totalseconds >= 1)
-                rspeed = rxbytecounter * 8 / totalseconds;
-            RXstatus.Text = "received " + rxbytecounter + " byte " + totalseconds + " s, " + rspeed + " bit/s";
+            // calculate speed
+            int fsz = (int)recfile.filesize;
+            if (fsz == 0) fsz = ArraySend.FileSize; // during reception we do not have the final size, use the transmitted size
+            // fsz = real or zipped file size, whatever available
+            // transmitted size in % of zipped file
+            int txsize = 0;
+            if (ArraySend.FileSize > 0)
+                txsize = (recfile.rxbytes * 100) / ArraySend.FileSize;
+            // transmitted size of real filesize
+            int txreal = (fsz * txsize) / 100;
+            // speed
+            int speed_bps = 0;
+            if(recfile.runtime.TotalSeconds > 0)
+                speed_bps = (int)(((double)txreal * 8.0) / recfile.runtime.TotalSeconds);
+
+            // show RX status on top of the RX windows
+            String s = "RX: ";
+
+            recfile.blockstat(blockres);
+            int missingBlocks = blockres[0] - blockres[1];
+
+            if (ArraySend.rxFilename != null && ArraySend.rxFilename.Length > 0)
+            {
+                s += ArraySend.rxFilename + " ";
+                s += recfile.rxbytes / 1000 + " of " + ArraySend.FileSize / 1000 + " kB ";
+                s += Math.Truncate(recfile.runtime.TotalSeconds) + " s, ";
+                s += blockres[1] + " of " + blockres[0] + " blocks OK";
+            }
+            else
+                s += "wait for RX";
+
+            if (rxtype == statics.Image)
+                label_rximage.Text = s;
+
+            if (rxtype == statics.AsciiFile || rxtype == statics.HTMLFile || rxtype == statics.BinaryFile)
+                label_rxfile.Text = s;
+
+            // show speed in status line at the left side
+            toolStripStatusLabel.Text = "Line Speed: " + speed.ToString() + " bps";
+
+            if (missBlocks < 0) missBlocks = 0;
+            if (missingBlocks < 0) missingBlocks = 0;
+
+            // show RX status in the status line
+            if (rxtype == statics.BERtest)
+                RXstatus.Text = "RXed: " + rxbytecounter + " Byte. Missing blocks: " + missBlocks;
+            else
+            {
+                if(fsz > 0)
+                    RXstatus.Text = "RXed: " + fsz + " Byte. Missing blocks: " + missingBlocks;
+                else
+                    RXstatus.Text = "RXed: " + rxbytecounter + " Byte. Missing blocks: " + missingBlocks;
+            }
+
+            if(speed_bps > 0)
+                RXstatus.Text += " Net Speed:" + speed_bps + " bps";
         }
 
         private void button_cancelimg_Click(object sender, EventArgs e)
@@ -1139,7 +877,10 @@ namespace oscardata
             label_txfile.Location = new Point(rtb_TXfile.Location.X, ly);
             label_rxfile.Location = new Point(rtb_RXfile.Location.X, ly);
 
-            label_speed.Location = new Point(panel_txspectrum.Location.X + panel_txspectrum.Size.Width + 20,panel_txspectrum.Location.Y+10);
+            trackBar_maxlevel.Location = new Point(panel_txspectrum.Location.X + panel_txspectrum.Size.Width + 5, panel_txspectrum.Location.Y);
+            trackBar_maxlevel.Size = new Size(20, panel_txspectrum.Size.Height);
+
+            label_speed.Location = new Point(trackBar_maxlevel.Location.X + trackBar_maxlevel.Size.Width + 15,panel_txspectrum.Location.Y+10);
             cb_speed.Location = new Point(label_speed.Location.X + label_speed.Size.Width + 10, label_speed.Location.Y-5);
 
             label_fifo.Location = new Point(label_speed.Location.X, label_speed.Location.Y + 35);
@@ -1207,26 +948,6 @@ namespace oscardata
                 statics.ModemIP = "1.2.3.4";
         }
 
-        private void bt_file_ascii_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog open = new OpenFileDialog();
-            open.Filter = "Text Files(*.txt*; *.*)|*.txt; *.*";
-            if (open.ShowDialog() == DialogResult.OK)
-            {
-                TXfilename = open.FileName;
-                TXRealFilename = open.SafeFileName;
-                String text = File.ReadAllText(TXfilename);
-                rtb_TXfile.Text = text;
-                txcommand = statics.AsciiFile;
-                // compress file
-                ZipStorer zs = new ZipStorer();
-                zs.zipFile(statics.zip_TXtempfilename,open.SafeFileName,open.FileName);
-
-                TXRealFileSize = statics.GetFileSize(statics.zip_TXtempfilename);
-                ShowTXstatus();
-            }
-        }
-
         private void bt_file_send_Click(object sender, EventArgs e)
         {
             rtb_RXfile.Text = "";
@@ -1236,36 +957,35 @@ namespace oscardata
             ArraySend.Send(textarr, (Byte)txcommand, TXfilename, TXRealFilename);
         }
 
+        private void bt_file_ascii_Click(object sender, EventArgs e)
+        {
+            bt_sendFile("Text Files(*.txt*; *.*)|*.txt; *.*", statics.AsciiFile);
+        }
+
         private void button2_Click(object sender, EventArgs e)
         {
-            OpenFileDialog open = new OpenFileDialog();
-            open.Filter = "HTML Files(*.html; *.htm; *.*)|*.html; *.htm; *.*";
-            if (open.ShowDialog() == DialogResult.OK)
-            {
-                TXfilename = open.FileName;
-                TXRealFilename = open.SafeFileName;
-                String text = File.ReadAllText(TXfilename);
-                rtb_TXfile.Text = text;
-                txcommand = statics.HTMLFile;
-                // compress file
-                ZipStorer zs = new ZipStorer();
-                zs.zipFile(statics.zip_TXtempfilename, open.SafeFileName, open.FileName);
-
-                TXRealFileSize = statics.GetFileSize(statics.zip_TXtempfilename);
-                ShowTXstatus();
-            }
+            bt_sendFile("HTML Files(*.html; *.htm; *.*)|*.html; *.htm; *.*", statics.HTMLFile);
         }
 
         private void bt_sendBinaryFile_Click(object sender, EventArgs e)
         {
+            bt_sendFile("All Files(*.*)|*.*", statics.BinaryFile);
+        }
+
+        private void bt_sendFile(String filter, int cmd)
+        {
             OpenFileDialog open = new OpenFileDialog();
-            open.Filter = "All Files(*.*)|*.*";
+            open.Filter = filter;
             if (open.ShowDialog() == DialogResult.OK)
             {
+                txcommand = cmd;
                 TXfilename = open.FileName;
                 TXRealFilename = open.SafeFileName;
-                rtb_TXfile.Text = "Binary file " + TXfilename + " loaded";
-                txcommand = statics.BinaryFile;
+                if (txcommand == statics.BinaryFile)
+                    rtb_TXfile.Text = "Binary file " + TXfilename + " loaded";
+                else
+                    rtb_TXfile.Text = File.ReadAllText(TXfilename);
+
                 // compress file
                 ZipStorer zs = new ZipStorer();
                 zs.zipFile(statics.zip_TXtempfilename, open.SafeFileName, open.FileName);
@@ -1277,26 +997,17 @@ namespace oscardata
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            int idx = cb_speed.SelectedIndex;
-            int real_rate=4000;
-
-            switch (idx)
-            {
-                case 0: real_rate = 3000; break;
-                case 1: real_rate = 3150; break;
-                case 2: real_rate = 3675; break;
-                case 3: real_rate = 4000; break;
-                case 4: real_rate = 4410; break;
-                case 5: real_rate = 4800; break;
-                case 6: real_rate = 5525; break;
-                case 7: real_rate = 6000; break;
-                case 8: real_rate = 6615; break;
-                case 9: real_rate = 7200; break;
-            }
-
-            statics.setDatarate(real_rate);
+            if (cb_speed.Text.Contains("3000")) statics.real_datarate = 3000;
+            if (cb_speed.Text.Contains("4000")) statics.real_datarate = 4000;
+            if (cb_speed.Text.Contains("4410")) statics.real_datarate = 4410;
+            if (cb_speed.Text.Contains("4800")) statics.real_datarate = 4800;
+            if (cb_speed.Text.Contains("5500")) statics.real_datarate = 5500;
+            if (cb_speed.Text.Contains("6000")) statics.real_datarate = 6000;
+            if (cb_speed.Text.Contains("6600")) statics.real_datarate = 6600;
+            if (cb_speed.Text.Contains("7200")) statics.real_datarate = 7200;
 
             Byte[] txdata = new byte[statics.PayloadLen + 2];
+            int idx = cb_speed.SelectedIndex;
             txdata[0] = (Byte)statics.ResamplingRate; // BER Test Marker
             txdata[1] = (Byte)idx;
 
@@ -1307,7 +1018,6 @@ namespace oscardata
             // stop any ongoing transmission
             button_cancelimg_Click(null, null);
         }
-
         
         private void timer_searchmodem_Tick(object sender, EventArgs e)
         {
@@ -1415,6 +1125,9 @@ namespace oscardata
                     s = ReadString(sr);
                     cb_autostart.Checked = (s == "1");
                     try { cb_announcement.Text = ReadString(sr); } catch { }
+                    s = ReadString(sr);
+                    try { cb_stampinfo.Checked = (s == "1"); } catch { }
+                    try { tb_info.Text = ReadString(sr); } catch { }
                 }
             }
             catch
@@ -1443,7 +1156,8 @@ namespace oscardata
                     sw.WriteLine(tb_CAPvol.Value.ToString());
                     sw.WriteLine(cb_autostart.Checked ? "1" : "0");
                     sw.WriteLine(cb_announcement.Text);
-
+                    sw.WriteLine(cb_stampinfo.Checked ? "1" : "0");
+                    sw.WriteLine(tb_info.Text);
                 }
             }
             catch { }

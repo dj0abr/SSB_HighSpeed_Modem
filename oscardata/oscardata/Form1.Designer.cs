@@ -77,6 +77,7 @@
             this.tb_shutdown = new System.Windows.Forms.TextBox();
             this.bt_resetmodem = new System.Windows.Forms.Button();
             this.textBox2 = new System.Windows.Forms.TextBox();
+            this.textBox3 = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.label6 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
@@ -100,7 +101,10 @@
             this.timer_searchmodem = new System.Windows.Forms.Timer(this.components);
             this.progressBar_fifo = new System.Windows.Forms.ProgressBar();
             this.label_fifo = new System.Windows.Forms.Label();
-            this.textBox3 = new System.Windows.Forms.TextBox();
+            this.trackBar_maxlevel = new System.Windows.Forms.TrackBar();
+            this.tb_info = new System.Windows.Forms.TextBox();
+            this.label7 = new System.Windows.Forms.Label();
+            this.cb_stampinfo = new System.Windows.Forms.CheckBox();
             this.statusStrip1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -115,6 +119,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tb_CAPvol)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_PBvol)).BeginInit();
             this.groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBar_maxlevel)).BeginInit();
             this.SuspendLayout();
             // 
             // timer_udpTX
@@ -608,6 +613,18 @@
             this.textBox2.Text = "in case the RX has sync\r\nproblems, it can be\r\nre-initialized here.";
             this.textBox2.Visible = false;
             // 
+            // textBox3
+            // 
+            this.textBox3.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBox3.ForeColor = System.Drawing.Color.Black;
+            this.textBox3.Location = new System.Drawing.Point(15, 46);
+            this.textBox3.Multiline = true;
+            this.textBox3.Name = "textBox3";
+            this.textBox3.Size = new System.Drawing.Size(151, 50);
+            this.textBox3.TabIndex = 12;
+            this.textBox3.Text = "only uncheck if modem runs on a separate PC";
+            // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.label6);
@@ -709,6 +726,9 @@
             // 
             // groupBox2
             // 
+            this.groupBox2.Controls.Add(this.cb_stampinfo);
+            this.groupBox2.Controls.Add(this.tb_info);
+            this.groupBox2.Controls.Add(this.label7);
             this.groupBox2.Controls.Add(this.textBox5);
             this.groupBox2.Controls.Add(this.cb_announcement);
             this.groupBox2.Controls.Add(this.textBox4);
@@ -786,7 +806,7 @@
             this.tb_callsign.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.tb_callsign.Location = new System.Drawing.Point(71, 28);
             this.tb_callsign.Name = "tb_callsign";
-            this.tb_callsign.Size = new System.Drawing.Size(151, 20);
+            this.tb_callsign.Size = new System.Drawing.Size(104, 20);
             this.tb_callsign.TabIndex = 1;
             // 
             // label1
@@ -803,7 +823,7 @@
             this.cb_stampcall.AutoSize = true;
             this.cb_stampcall.Checked = true;
             this.cb_stampcall.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_stampcall.Location = new System.Drawing.Point(71, 67);
+            this.cb_stampcall.Location = new System.Drawing.Point(71, 64);
             this.cb_stampcall.Name = "cb_stampcall";
             this.cb_stampcall.Size = new System.Drawing.Size(146, 17);
             this.cb_stampcall.TabIndex = 2;
@@ -815,7 +835,7 @@
             this.cb_savegoodfiles.AutoSize = true;
             this.cb_savegoodfiles.Checked = true;
             this.cb_savegoodfiles.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_savegoodfiles.Location = new System.Drawing.Point(71, 90);
+            this.cb_savegoodfiles.Location = new System.Drawing.Point(71, 102);
             this.cb_savegoodfiles.Name = "cb_savegoodfiles";
             this.cb_savegoodfiles.Size = new System.Drawing.Size(159, 17);
             this.cb_savegoodfiles.TabIndex = 3;
@@ -833,10 +853,14 @@
             "5500 8APSK BW: 2300 Hz",
             "6000 8APSK BW: 2500 Hz (QO-100)",
             "6600 8APSK BW: 2600 Hz",
-            "7200 8APSK BW: 2700 Hz"});
-            this.cb_speed.Location = new System.Drawing.Point(636, 593);
+            "7200 8APSK BW: 2700 Hz",
+            "5500 8PSK BW: 2300 Hz",
+            "6000 8PSK BW: 2500 Hz (QO-100)",
+            "6600 8PSK BW: 2600 Hz",
+            "7200 8PSK BW: 2700 Hz"});
+            this.cb_speed.Location = new System.Drawing.Point(658, 591);
             this.cb_speed.Name = "cb_speed";
-            this.cb_speed.Size = new System.Drawing.Size(324, 21);
+            this.cb_speed.Size = new System.Drawing.Size(304, 21);
             this.cb_speed.TabIndex = 11;
             this.cb_speed.Text = "4410 QPSK BW: 2500 Hz (QO-100)";
             this.cb_speed.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
@@ -844,7 +868,7 @@
             // label_speed
             // 
             this.label_speed.AutoSize = true;
-            this.label_speed.Location = new System.Drawing.Point(545, 596);
+            this.label_speed.Location = new System.Drawing.Point(567, 594);
             this.label_speed.Name = "label_speed";
             this.label_speed.Size = new System.Drawing.Size(71, 13);
             this.label_speed.TabIndex = 12;
@@ -857,10 +881,10 @@
             // 
             // progressBar_fifo
             // 
-            this.progressBar_fifo.Location = new System.Drawing.Point(636, 620);
+            this.progressBar_fifo.Location = new System.Drawing.Point(658, 618);
             this.progressBar_fifo.Maximum = 20;
             this.progressBar_fifo.Name = "progressBar_fifo";
-            this.progressBar_fifo.Size = new System.Drawing.Size(324, 23);
+            this.progressBar_fifo.Size = new System.Drawing.Size(304, 23);
             this.progressBar_fifo.Step = 11;
             this.progressBar_fifo.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.progressBar_fifo.TabIndex = 13;
@@ -868,29 +892,59 @@
             // label_fifo
             // 
             this.label_fifo.AutoSize = true;
-            this.label_fifo.Location = new System.Drawing.Point(545, 625);
+            this.label_fifo.Location = new System.Drawing.Point(567, 623);
             this.label_fifo.Name = "label_fifo";
             this.label_fifo.Size = new System.Drawing.Size(55, 13);
             this.label_fifo.TabIndex = 14;
             this.label_fifo.Text = "TX Buffer:";
             // 
-            // textBox3
+            // trackBar_maxlevel
             // 
-            this.textBox3.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.textBox3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox3.ForeColor = System.Drawing.Color.Black;
-            this.textBox3.Location = new System.Drawing.Point(15, 46);
-            this.textBox3.Multiline = true;
-            this.textBox3.Name = "textBox3";
-            this.textBox3.Size = new System.Drawing.Size(151, 50);
-            this.textBox3.TabIndex = 12;
-            this.textBox3.Text = "only uncheck if modem runs on a separate PC";
+            this.trackBar_maxlevel.Location = new System.Drawing.Point(535, 591);
+            this.trackBar_maxlevel.Maximum = 100;
+            this.trackBar_maxlevel.Name = "trackBar_maxlevel";
+            this.trackBar_maxlevel.Orientation = System.Windows.Forms.Orientation.Vertical;
+            this.trackBar_maxlevel.Size = new System.Drawing.Size(45, 75);
+            this.trackBar_maxlevel.TabIndex = 15;
+            this.trackBar_maxlevel.TickFrequency = 10;
+            this.trackBar_maxlevel.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
+            this.trackBar_maxlevel.Value = 50;
+            // 
+            // tb_info
+            // 
+            this.tb_info.Location = new System.Drawing.Point(243, 28);
+            this.tb_info.Name = "tb_info";
+            this.tb_info.Size = new System.Drawing.Size(413, 20);
+            this.tb_info.TabIndex = 22;
+            this.tb_info.Text = "tnx fer QSO, vy 73";
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(204, 31);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(28, 13);
+            this.label7.TabIndex = 21;
+            this.label7.Text = "Info:";
+            // 
+            // cb_stampinfo
+            // 
+            this.cb_stampinfo.AutoSize = true;
+            this.cb_stampinfo.Checked = true;
+            this.cb_stampinfo.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cb_stampinfo.Location = new System.Drawing.Point(71, 82);
+            this.cb_stampinfo.Name = "cb_stampinfo";
+            this.cb_stampinfo.Size = new System.Drawing.Size(128, 17);
+            this.cb_stampinfo.TabIndex = 23;
+            this.cb_stampinfo.Text = "Insert Info into picture";
+            this.cb_stampinfo.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1293, 691);
+            this.Controls.Add(this.trackBar_maxlevel);
             this.Controls.Add(this.label_fifo);
             this.Controls.Add(this.progressBar_fifo);
             this.Controls.Add(this.cb_speed);
@@ -925,6 +979,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tb_PBvol)).EndInit();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.trackBar_maxlevel)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1003,6 +1058,10 @@
         private System.Windows.Forms.TextBox textBox4;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.TextBox textBox3;
+        private System.Windows.Forms.TrackBar trackBar_maxlevel;
+        private System.Windows.Forms.CheckBox cb_stampinfo;
+        private System.Windows.Forms.TextBox tb_info;
+        private System.Windows.Forms.Label label7;
     }
 }
 

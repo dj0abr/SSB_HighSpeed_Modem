@@ -54,7 +54,6 @@ namespace oscardata
         public static int UdpBlocklen = 258;                         // length of a data block (UDP)
         public static int PayloadLen = UdpBlocklen - FecLen - 3 - 2 - 2;
         public static int real_datarate = 6000;                 // speed in bit/s
-        static int datarate = (real_datarate * 100) / 99;       // little bit more to avoid underruns
         public static String jpg_tempfilename = "rxdata.jpg";
         public static String zip_TXtempfilename = "TXtemp.zip";
         public static String zip_RXtempfilename = "RXtemp.zip";
@@ -67,16 +66,6 @@ namespace oscardata
         public static String[] AudioCAPdevs;
         public static int PBfifousage = 0;
 
-        public static void setDatarate(int rate)
-        {
-            real_datarate = rate;
-            datarate = (rate * 100) / 99;
-        }
-
-        public static int getDatarate()
-        {
-            return datarate;
-        }
 
         public static String[] getOwnIPs()
         {

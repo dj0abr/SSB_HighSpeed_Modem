@@ -157,7 +157,7 @@ void setPBvolume(int v)
     if (vf < minPBvol) vf = minPBvol;
     if (vf > maxPBvol) vf = maxPBvol;
 
-    printf("set PB volume to:%d / %f [%f..%f]\n", v, vf, minPBvol, maxPBvol);
+    //printf("set PB volume to:%d / %f [%f..%f]\n", v, vf, minPBvol, maxPBvol);
 
     selectPBdevice_wasapi();
     if (!BASS_WASAPI_SetVolume(BASS_WASAPI_CURVE_DB, vf))
@@ -216,16 +216,55 @@ DWORD CALLBACK PBcallback_wasapi(void* buffer, DWORD length, void* user)
     free(fdata);
     return length;
 }
+/*
+#define MCHECK 10
+void nullChecker(float fv, float *pbuf, DWORD len)
+{
+    static float farr[MCHECK];
+    static int idx = 0;
+    static int f = 1;
+    static int anz = 0;
 
+    if (f)
+    {
+        f = 0;
+        for (int i = 0; i < MCHECK; i++)
+            farr[i] = 1;
+    }
+
+    farr[idx] = fv;
+    idx++;
+    if (idx == MCHECK) idx = 0;
+
+    float nu = 0;
+    for (int i = 0; i < MCHECK; i++)
+    {
+        nu += farr[i];
+    }
+
+    if (nu == 0)
+    {
+        // how many 00s ar in the current buffer
+        int a = 0;
+        for (unsigned int i = 0; i < len-1; i++)
+        {
+            if (pbuf[i] == 0 && pbuf[i+1] == 0) a++;
+        }
+        printf("=============== null sequence detected: %d len:%d nullanz:%d\n",anz++,len,a);
+    }
+}
+*/
 DWORD CALLBACK CAPcallback_wasapi(void* buffer, DWORD length, void* user)
 {
     //printf("CAP callback, len:%d\n",length);
     //measure_speed_bps(length/sizeof(float)/ WASAPI_CHANNELS);
 
     float* fbuffer = (float*)buffer;
-    //showbytestringf((char*)"rx: ", fbuffer, 20);
+    //showbytestringf((char*)"rx: ", fbuffer, 10);
+    //printf("%10.6f\n", fbuffer[0]);
     for (unsigned int i = 0; i < (length / sizeof(float)); i += WASAPI_CHANNELS)
     {
+        //nullChecker(fbuffer[i],fbuffer, length / sizeof(float));
         cap_write_fifo(fbuffer[i]);
     }
 

@@ -228,6 +228,7 @@
     <ClInclude Include="frameformat.h" />
     <ClInclude Include="hsmodem.h" />
     <ClInclude Include="liquid.h" />
+    <ClInclude Include="symboltracker.h" />
     <ClInclude Include="udp.h" />
   </ItemGroup>
   <ItemGroup>
@@ -243,6 +244,7 @@
     <ClCompile Include="main_helper.cpp" />
     <ClCompile Include="scrambler.cpp" />
     <ClCompile Include="speed.cpp" />
+    <ClCompile Include="symboltracker.cpp" />
     <ClCompile Include="udp.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

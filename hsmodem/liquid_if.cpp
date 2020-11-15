@@ -51,9 +51,13 @@ modulation_scheme getMod()
 {
     if(bitsPerSymbol == 2)
         return LIQUID_MODEM_QPSK;
-        //return LIQUID_MODEM_APSK4;
-    else 
-        return LIQUID_MODEM_APSK8;
+    else
+    {
+        if(psk8mode == 0)
+            return LIQUID_MODEM_APSK8;
+        else
+            return LIQUID_MODEM_PSK8;
+    }
 }
 
 // =========== MODULATOR ==================================================
@@ -209,7 +213,6 @@ void modulator(uint8_t sym_in)
 
 nco_crcf dnnco = NULL;
 symtrack_cccf symtrack = NULL;
-modem demod = NULL;
 firdecim_crcf decim = NULL;
 
 // decimator parameters
@@ -221,8 +224,9 @@ int          ftype_st       = LIQUID_FIRFILT_RRC;
 unsigned int k_st           = 4;       // samples per symbol
 unsigned int m_st           = 7;       // filter delay (symbols)
 float        beta_st        = beta_excessBW;//0.30f;   // filter excess bandwidth factor
-float        bandwidth_st   = 0.7f;  // loop filter bandwidth
+float        bandwidth_st   = 0.9f;  // loop filter bandwidth
 
+uint8_t maxLevel = 0; // maximum level over the last x samples in %
 
 void init_demodulator()
 {
@@ -241,34 +245,23 @@ void init_demodulator()
     
     // create symbol tracking synchronizer
     //k_st = txinterpolfactor;
-    symtrack = symtrack_cccf_create(ftype_st,k_st,m_st,beta_st,getMod());
-    symtrack_cccf_set_bandwidth(symtrack,bandwidth_st);
-    
-    int ret = symtrack_cccf_set_eq_dd(symtrack);
-    if (ret != LIQUID_OK)
-    {
-        printf("symtrack_cccf_set_eq_dd failed\n");
-    }
-    
-    // demodulator
-    demod = modem_create(getMod());
-    printf("RX demodulator running\n");
+    //symtrack = km_symtrack_cccf_create(ftype_st,k_st,m_st,beta_st,getMod());
+    km_symtrack_cccf_create(ftype_st, k_st, m_st, beta_st, getMod());
+    //symtrack_cccf_set_bandwidth(symtrack,bandwidth_st);
+    km_symtrack_cccf_set_bandwidth(bandwidth_st);
 }
 
 void close_demodulator()
 {
-    if(symtrack != NULL) symtrack_cccf_destroy(symtrack);
-    if(demod != NULL) modem_destroy(demod);
     if(decim != NULL) firdecim_crcf_destroy(decim);
     symtrack = NULL;
-    demod = NULL;
     decim = NULL;
 }
 
 void resetModem()
 {
     //printf("Reset Symtrack\n");
-    symtrack_cccf_reset(symtrack);
+    km_symtrack_cccf_reset(0xff);
 }
 
 // called for Audio-Samples (FFT)
@@ -301,6 +294,34 @@ void make_FFTdata(float f)
     }
 }
 
+#define MCHECK 1000
+void getMax(float fv)
+{
+    static float farr[MCHECK];
+    static int idx = 0;
+    static int f = 1;
+
+    if (f)
+    {
+        f = 0;
+        for (int i = 0; i < MCHECK; i++)
+            farr[i] = 1;
+    }
+
+    farr[idx] = fv;
+    idx++;
+    if (idx == MCHECK)
+    {
+        idx = 0;
+        float max = 0;
+        for (int i = 0; i < MCHECK; i++)
+        {
+            if (farr[i] > max) max = farr[i];
+        }
+        maxLevel = (uint8_t)(max*100);
+        //printf("max: %10.6f\n", max);
+    }
+}
 
 int demodulator()
 {
@@ -313,13 +334,16 @@ static int ccol_idx = 0;
     float f;
     int ret = cap_read_fifo(&f);
     if(ret == 0) return 0;
+       
 
     // input volume
 #ifdef _WIN32_
     f *= softwareCAPvolume;
 #endif
 
-    make_FFTdata(f*120);
+    getMax(f);
+
+    make_FFTdata(f*60);
     
     // downconvert into baseband
     // still at soundcard sample rate
@@ -340,19 +364,22 @@ static int ccol_idx = 0;
     ccol_idx = 0;
     
     // we have rxPreInterpolfactor samples in ccol
+    //printf("sc:%10.6f dn:%10.6f j%10.6f  ", f, c.real, c.imag);
     liquid_float_complex y;
     firdecim_crcf_execute(decim, ccol, &y);
 
     unsigned int num_symbols_sync;
     liquid_float_complex syms;
-    symtrack_cccf_execute(symtrack, y, &syms, &num_symbols_sync);
+    //symtrack_cccf_execute(symtrack, y, &syms, &num_symbols_sync);
+    unsigned int nsym_out;   // output symbol
+    km_symtrack_execute(y, &syms, &num_symbols_sync,&nsym_out);
     
     if(num_symbols_sync > 1) printf("symtrack_cccf_execute %d output symbols ???\n",num_symbols_sync);
     if(num_symbols_sync != 0)
     {
         unsigned int sym_out;   // output symbol
-        modem_demodulate(demod, syms, &sym_out);
-        
+        sym_out = nsym_out;
+
         measure_speed_syms(1);
         
         // try to extract a complete frame

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 // Input: Byte Array
@@ -79,8 +78,10 @@ namespace oscardata
             long filesize = data.Length;// statics.GetFileSize(filename);
 
             Byte[] fnarr = statics.StringToByteArray(realname);
+
+            // CRC16 over complete file contents is the file ID
             Crc c = new Crc();
-            UInt16 fncrc = c.crc16_messagecalc(fnarr, fnarr.Length);
+            UInt16 fncrc = c.crc16_messagecalc(data, data.Length);
 
             // create the file header
             // 50 bytes ... Filename (or first 50 chars of the filename)
@@ -151,13 +152,14 @@ namespace oscardata
                 if (txlen <= statics.PayloadLen)
                 {
                     // we just need to send one frame
-                    txudp(txdata, txtype, statics.LastFrame);
+                    txudp(txdata, txtype, statics.SingleFrame);
                     setSending(false);  // transmission complete
                 }
                 else
                 {
                     // additional frame follow
                     // from txdata send one chunk of length statics.PayloadLen
+                    // frame is repeated for preamble by hsmodem.cpp
                     Array.Copy(txdata, 0, txarr, 0, statics.PayloadLen);
                     txudp(txarr, txtype, statics.FirstFrame);
                     txpos = statics.PayloadLen;

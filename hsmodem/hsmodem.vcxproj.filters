@@ -54,6 +54,9 @@
     <ClCompile Include="audio_wasapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="symboltracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hsmodem.h">
@@ -84,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="bassflac.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="symboltracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

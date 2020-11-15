@@ -32,6 +32,7 @@ uint8_t rx_status = 0;
 
 int framecounter = 0;
 int lastframenum = 0;
+int getPayload_error = 0;
 
 // header for TX, 
 uint8_t TXheaderbytes[HEADERLEN] = {0x53, 0xe1, 0xa6};
@@ -95,7 +96,7 @@ uint8_t *Pack(uint8_t *payload, int type, int status, int *plen)
     // polulate the raw frame
     
     // make the frame counter
-    if(status & (1<<4))
+    if(status == 0)
         framecounter = 0;   // first block of a stream
     else
         framecounter++;
@@ -131,30 +132,46 @@ uint8_t *Pack(uint8_t *payload, int type, int status, int *plen)
     return txblock;
 }
 
+#ifdef _WIN32_
+#define MAXHEADERRS  5
+#endif
 
-#define MAXHEADERRS  0
+#ifdef _LINUX_
+#define MAXHEADERRS  2  // takes less CPU time, important for Rasberry PI
+#endif
 
 /*
  * Header erros will not cause any data errors because the CRC will filter out
  * false header detects,
  * but it will cause higher CPU load due to excessive execution of FEC and CRC
-*/
-int seekHeadersyms()
+ */
+
+int seekHeadersyms(int symnum)
 {
+    int ret = -1;
+    int errs = 0;
+
+    int exp_hdr = (UDPBLOCKLEN * 8) / bitsPerSymbol;    // we expect a new header at this symbol number
+    symnum %= exp_hdr;
+
+    int maxerr = MAXHEADERRS;
+
     if(constellationSize == 4)
     {
         // QPSK
         for(int tab=0; tab<4; tab++)
         {
-            int errs = 0;
+            errs = 0;
             for(int i=0; i<HEADERLEN*8/2; i++)
             {
                 if(rxbuffer[i] != QPSK_headertab[tab][i])
-                {
                     errs++;
-                }
             }
-            if(errs <= MAXHEADERRS) return tab;
+            if (errs <= maxerr)
+            {
+                ret = tab;
+                break;
+            }
         }
     }
     else
@@ -162,17 +179,27 @@ int seekHeadersyms()
         // 8PSK
         for(int tab=0; tab<8; tab++)
         {
-            int errs = 0;
+            errs = 0;
             for(int i=0; i<HEADERLEN*8/3; i++)
             {
                 if(rxbuffer[i] != _8PSK_headertab[tab][i])
-                {
                     errs++;
-                }
             }
-            if(errs <= MAXHEADERRS) return tab;
+            if(errs <= maxerr) 
+            {
+                ret = tab; 
+                break;
+            }
         }
     }
+
+    if (ret != -1)
+    {
+        //printf("header detected at symbol:%d, headererrors:%d\n", symnum,errs);
+        return ret;
+    }
+
+    //if (symnum == 0) printf("header expected at symbol:%d but not found\n", symnum);
     
     return -1;
 }
@@ -184,6 +211,7 @@ uint8_t *unpack_data(uint8_t *rxd, int len)
 {
     int framerdy = 0;
     static uint8_t payload[PAYLOADLEN+10];
+    static int symnum = 0;
     
     rx_status = 0;
     // shift all received symbols through rxbuffer
@@ -196,13 +224,13 @@ uint8_t *unpack_data(uint8_t *rxd, int len)
         memmove(rxbuffer,rxbuffer+1,frmlen-1);
         // insert new symbol at the top
         rxbuffer[frmlen-1] = rxd[sym];
+        symnum++;
         
         //showbytestring((char*)"rx: ",rxbuffer,30);
         
-        int rotations = seekHeadersyms();
+        int rotations = seekHeadersyms(symnum);
         if(rotations != -1) 
         {
-            //printf("Header found, rotation: %d\n",rotations);
         
             // rxbuffer contains all symbols of the received frame
             // convert to bytes
@@ -226,6 +254,14 @@ uint8_t *unpack_data(uint8_t *rxd, int len)
             {
                 memcpy(payload,pl, PAYLOADLEN+10);
                 framerdy = 1;
+                if(symnum != 688)
+                    printf("Header found, rotation: %d at symbol no.: %d result: OK\n", rotations, symnum);
+                symnum = 0;
+            }
+            else
+            {
+                if((symnum % ((UDPBLOCKLEN * 8) / bitsPerSymbol)) == 0)
+                    printf("Header found, rotation: %d at symbol no.: %d result: %d\n", rotations, symnum, getPayload_error);
             }
         }
     }
@@ -273,6 +309,7 @@ uint8_t *getPayload(uint8_t *rxb)
     if(ret == 0) 
     {
         //printf("fec ERROR\n");
+        getPayload_error = 1;
         return NULL; // fec impossible
     }
     //printf("fec ok\n");
@@ -285,6 +322,7 @@ uint8_t *getPayload(uint8_t *rxb)
     if (crc != rxcrc) 
     {
         //printf("crc ERROR\n");
+        getPayload_error = 2;
         return NULL;    // no data found
     }
     //printf("crc OK\n");
@@ -308,8 +346,8 @@ uint8_t *getPayload(uint8_t *rxb)
     payload[4] = rx_status;                 // frame lost information
     payload[5] = speed >> 8;                // measured line speed
     payload[6] = speed;
-    payload[7] = 0;     // free for later use
-    payload[8] = 0;
+    payload[7] = maxLevel;                  // actual max level on sound capture in %
+    payload[8] = 0;                         // free for later use
     payload[9] = 0;
     
     //printf("Frame no.: %d, type:%d, minfo:%d\n",framenumrx,payload[0],payload[3]);
