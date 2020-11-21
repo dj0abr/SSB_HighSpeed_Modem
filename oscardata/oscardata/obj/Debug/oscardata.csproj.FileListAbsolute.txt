@@ -1,0 +1,11 @@
+E:\funk\hsmodem\oscardata\oscardata\bin\Debug\oscardata.exe.config
+E:\funk\hsmodem\oscardata\oscardata\bin\Debug\oscardata.exe
+E:\funk\hsmodem\oscardata\oscardata\bin\Debug\oscardata.pdb
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.Form1.resources
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.Properties.Resources.resources
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.csproj.GenerateResource.cache
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.csproj.CoreCompileInputs.cache
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.exe
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.pdb
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.csprojAssemblyReference.cache
+E:\funk\hsmodem\oscardata\oscardata\obj\Debug\oscardata.Form2_showtext.resources

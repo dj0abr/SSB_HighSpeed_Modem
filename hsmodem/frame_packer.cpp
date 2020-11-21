@@ -254,14 +254,12 @@ uint8_t *unpack_data(uint8_t *rxd, int len)
             {
                 memcpy(payload,pl, PAYLOADLEN+10);
                 framerdy = 1;
-                if(symnum != 688)
-                    printf("Header found, rotation: %d at symbol no.: %d result: OK\n", rotations, symnum);
+                //if(symnum != 688) printf("Header found, rotation: %d at symbol no.: %d result: OK\n", rotations, symnum);
                 symnum = 0;
             }
             else
             {
-                if((symnum % ((UDPBLOCKLEN * 8) / bitsPerSymbol)) == 0)
-                    printf("Header found, rotation: %d at symbol no.: %d result: %d\n", rotations, symnum, getPayload_error);
+                //if((symnum % ((UDPBLOCKLEN * 8) / bitsPerSymbol)) == 0) printf("Header found, rotation: %d at symbol no.: %d result: %d\n", rotations, symnum, getPayload_error);
             }
         }
     }

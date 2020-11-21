@@ -64,6 +64,12 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="Form2_showtext.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form2_showtext.Designer.cs">
+      <DependentUpon>Form2_showtext.cs</DependentUpon>
+    </Compile>
     <Compile Include="imagehandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -72,6 +78,9 @@
     <Compile Include="zip.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Form2_showtext.resx">
+      <DependentUpon>Form2_showtext.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -97,15 +106,44 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Properties\defaultpic.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Properties\Satellite-icon.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Properties\constelBG.png" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Properties\image.jpg" />
+    <None Include="Properties\image1.jpg" />
+    <None Include="Properties\image2.jpg" />
+    <None Include="Properties\App-voice-support-headset-icon.png" />
+    <None Include="Properties\Categories-preferences-system-icon.png" />
+    <None Include="Properties\Downloads-1-icon.png" />
+    <None Include="Properties\Mimetypes-text-csv-icon.png" />
+    <None Include="Properties\Photography-icon.png" />
+    <None Include="Properties\Mimetypes-text-html-icon.png" />
+    <None Include="Properties\binary.png" />
+    <None Include="Properties\cancel.png" />
+    <None Include="Properties\html.png" />
+    <None Include="Properties\image.png" />
+    <None Include="Properties\meter.png" />
+    <None Include="Properties\meter_big.png" />
+    <None Include="Properties\openfolder.png" />
+    <None Include="Properties\setup.png" />
+    <None Include="Properties\setup_big.png" />
+    <None Include="Properties\start.png" />
+    <None Include="Properties\stop.png" />
+    <None Include="Properties\text.png" />
+    <None Include="Properties\text_big.png" />
+    <None Include="Properties\transmit.png" />
+    <None Include="Properties\voice.png" />
+    <None Include="Properties\voice_big.png" />
+    <None Include="Properties\fail.png" />
+    <None Include="Properties\ok.png" />
+    <None Include="Properties\cdc_codecloop.png" />
+    <None Include="Properties\cdc_dig.png" />
+    <None Include="Properties\cdc_digital.png" />
+    <None Include="Properties\cdc_dv.png" />
+    <None Include="Properties\cdc_dvrx.png" />
+    <None Include="Properties\cdc_intloop.png" />
+    <None Include="Properties\textrx.png" />
+    <None Include="Properties\texttx.png" />
     <Content Include="Satellite-icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

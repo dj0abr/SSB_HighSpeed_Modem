@@ -69,9 +69,36 @@ void install_signal_handler()
 }
 #endif // _LINUX_
 
-void showbytestring(char *title, uint8_t *data, int anz)
+void closeAllandTerminate()
 {
-    printf("%s. Len %d: ",title,anz);
+    // terminate all Threads
+    keeprunning = 0;
+    // close audio
+#ifdef _LINUX_
+    close_audio();
+    close_audio_voice();
+#endif
+#ifdef _WIN32_
+    close_wasapi();
+    close_wasapi_voice();
+#endif
+    // close fft
+    exit_fft();
+    // close codec2 and opus
+    close_codec2();
+    close_voiceproc();
+    // close liquid-SDR
+    close_dsp();
+    // close network sockets
+    close(BC_sock_AppToModem);
+    close(DATA_sock_AppToModem);
+
+    exit(0);
+}
+
+void showbytestring(char *title, uint8_t *data, int totallen, int anz)
+{
+    printf("%s. Len %d: ",title, totallen);
     for(int i=0; i<anz; i++)
         printf("%02X ",data[i]);
     printf("\n");

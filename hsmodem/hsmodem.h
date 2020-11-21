@@ -30,6 +30,7 @@
 #include <Tlhelp32.h>
 #include <winbase.h>
 #include <Shlobj.h>
+#include "opus.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -37,6 +38,8 @@
 #pragma comment(lib, "basswasapi.lib")
 #pragma comment(lib, "libliquid.lib")
 #pragma comment(lib, "fftw_lib/libfftw3-3.lib")
+#pragma comment(lib, "opus.lib")
+#pragma comment(lib, "libcodec2.lib")
 #endif
 
 #ifdef _LINUX_
@@ -52,6 +55,7 @@
 #include <arpa/inet.h>
 #include <pwd.h>
 #include <math.h>
+#include <opus/opus.h>
 #endif
 
 #include "bass.h"
@@ -62,6 +66,8 @@
 #include "fec.h"
 #include "udp.h"
 #include "symboltracker.h"
+#include "bassenc_opus.h"
+#include "codec2.h"
 
 #define jpg_tempfilename "rxdata.jpg"
 
@@ -72,6 +78,18 @@
 // definitions for audio
 #define MAXDEVSTRLEN    2000
 #define CHANNELS 1      // no of channels used
+
+// voice audio sampling rate
+#define VOICE_SAMPRATE  48000   // do NOT change, OPUS works with 48k only
+
+enum _VOICEMODES_ {
+    VOICEMODE_OFF,
+    VOICEMODE_LISTENAUDIOIN,
+    VOICEMODE_INTERNALLOOP,
+    VOICEMODE_CODECLOOP,
+    VOICEMODE_DV_FULLDUPLEX,
+    VOICEMODE_DV_RXONLY
+};
 
 void init_packer();
 uint8_t* Pack(uint8_t* payload, int type, int status, int* plen);
@@ -96,7 +114,7 @@ void TX_Scramble(uint8_t* data, int len);
 uint8_t* RX_Scramble(uint8_t* data, int len);
 uint16_t Crc16_messagecalc(int rxtx, uint8_t* data, int len);
 
-void showbytestring(char* title, uint8_t* data, int anz);
+void showbytestring(char* title, uint8_t* data, int totallen, int anz);
 void measure_speed_syms(int len);
 void measure_speed_bps(int len);
 
@@ -106,6 +124,7 @@ int cfec_Reconstruct(uint8_t* darr, uint8_t* destination);
 
 int init_audio(int pbdev, int capdev);
 int pb_fifo_freespace(int nolock);
+int pb_fifo_usedspace();
 void pb_write_fifo_clear();
 void pb_write_fifo(float sample);
 int cap_read_fifo(float* data);
@@ -113,11 +132,17 @@ uint8_t* getAudioDevicelist(int* len);
 void setPBvolume(int v);
 void setCAPvolume(int v); 
 void setVolume(int pbcap, int v);
+void setVolume_voice(int pbcap, int v);
 int init_wasapi(int pbdev, int capdev);
 void sendAnnouncement();
+void readAudioDevices();
+void clear_audio_fifos();
+void clear_voice_fifos();
 
 void sleep_ms(int ms);
+int getus();
 void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock);
+void toGR_sendData(uint8_t* data, int type, int status);
 
 void modulator(uint8_t sym_in);
 int pb_fifo_usedBlocks();
@@ -130,6 +155,30 @@ void init_fft();
 void exit_fft();
 void showbytestringf(char* title, float* data, int anz);
 uint16_t* make_waterfall(float fre, int* retlen);
+
+int init_audio_voice(int setpbdev, int setcapdev);
+void pb_write_fifo_voice(float sample);
+int cap_read_fifo_voice(float* data);
+void toVoice(float sample);
+void toCodecDecoder(uint8_t* pdata, int len);
+
+void init_voiceproc();
+void encode(float f);
+
+int init_wasapi_voice(int pbdev, int capdev);
+void init_codec2();
+void encode_codec2(float f);
+void toCodecDecoder_codec2(uint8_t* pdata, int len);
+void close_wasapi();
+void close_wasapi_voice();
+
+void closeAllandTerminate();
+void close_voiceproc();
+void close_codec2();
+void close_audio();
+void close_audio_voice();
+int cap_fifo_usedPercent();
+
 
 void km_symtrack_cccf_create(int          _ftype,
     unsigned int _k,
@@ -147,17 +196,33 @@ extern int speed;
 extern int keeprunning;
 extern int caprate;
 extern int BC_sock_AppToModem;
+extern int DATA_sock_AppToModem;
 extern int UdpDataPort_ModemToApp;
 extern int txinterpolfactor;
 extern int rxPreInterpolfactor;
 extern char appIP[20];
 extern float softwareCAPvolume;
+extern float softwareCAPvolume_voice;
 extern int announcement;
 extern int ann_running;
 extern int transmissions;
 extern int linespeed;
 extern uint8_t maxLevel;
-extern int psk8mode;
+extern int VoiceAudioMode;
+extern int opusbitrate;
+extern int init_audio_result;
+extern int init_voice_result;
+extern int initialLSvol;
+extern int initialMICvol;
+extern int codec;
+
+
+// audio device description table
+typedef struct {
+    int bassdev;    // bass (basswasapi) dev no
+    char name[256]; // DEV name
+    char id[256];
+} AUDIODEVS;
 
 #ifdef _LINUX_
 int isRunning(char* prgname);

@@ -2,7 +2,7 @@
 The purpose of this project is to transfer data (pictures...) via a 2,7kHz SSB channel on the narrow band transponder as fast as possible.
 
 # this is work in progress
-Version 0.2 is working on:
+Version 0.4 is working on:
 Windows 10 (should work on Win7, not tested)
 linux Desktop PC, 
 Odroid SBC
@@ -27,6 +27,7 @@ this software uses these programs:
 * liquid-SDR: https://github.com/jgaeddert/liquid-dsp (MIT License)
 * BASS Audio: https://www.un4seen.com/ (free for non-commercial use)
 * fftw3: http://www.fftw.org (GPL V.2 or later)
+* libcodec2 (Linux: standard lib, Windows: from freeDV)
 
 # building the software
 * Linux
@@ -42,12 +43,18 @@ this software uses these programs:
 you need to run 2 programs, the first one is "hsmodem" which runs in a termimal without GUI. This is the modem doing all modulation and demodulation staff.
 The second program is the user interface "oscardata.exe".
 
-1. go into the folder "WinRelease" or "LinuxRelease"
+* Windows
+copy all files from "WinRelease" into any folder of your choice. Start oscardata.exe by double-clicking.
+The application oscardata.exe can also run on a different PC in your home network, see Linux version.
+Even a mix between Linux and Windows is possible, so running oscardata.exe on a Windows PC and
+running the hsmodem on another computer in the shack.
+
+* Linux
+1. go into the folder "LinuxRelease"
 2. run the software:  ./hs100modem.exe or ./hsmodem
 optional command line parameter:
 no parameter ... normal usage
 -m IP ... specify the V4 IP adress of the device where the application software is running. This is useful if you have more than one qo100modem running simultaneously. Without this parameter the app will search the modem automatically.
-
 3. start the user application on any PC in your home network. It will find the modem automatically
 The file is located in oscardata/oscardata/bin/Release
 On windows just start oscardata.exe
@@ -58,8 +65,6 @@ On Linux start it with:  mono  oscardata.exe
 * QO-100 via IC-9700, IC-7300 or IC-7100 ... working
 * Short Wave 6m band via IC-7300, IC-7100 ... working. In case of significant noise, use the lowest bit rate (3000 bit/s)
 
-# TODOs
-the current version V0.2 runs very fine on Linux but shows a higher bit error rate on Windows. This has to do with the initialisation of the sound card. The default sound bitrate setting in the Windows-Sound-Settings implement some kind of "filtering". This is currently under evaluation.
 
 # usage
 

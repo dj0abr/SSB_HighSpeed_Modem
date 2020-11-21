@@ -107,26 +107,5 @@ namespace oscardata
 
             return destImage;
         }
-
-        // gets a receive payload, reconstruct the image
-        // type: 2=start, 3=cont
-        public void receive_image(Byte[] rxdata, int minfo)
-        {
-            BinaryWriter writer = null;
-
-            if (minfo == statics.FirstFrame)
-            {
-                // image starts, create destination file
-                writer = new BinaryWriter(File.Open(statics.jpg_tempfilename, FileMode.Create));
-                writer.Write(rxdata);
-            }
-            else
-            {
-                // continue with image
-                writer = new BinaryWriter(File.Open(statics.jpg_tempfilename, FileMode.Append));
-                writer.Write(rxdata);
-            }
-            writer.Close();
-        }
     }
 }

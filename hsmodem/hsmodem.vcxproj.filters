@@ -57,6 +57,18 @@
     <ClCompile Include="symboltracker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="audio_voice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="voiceprocessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="audio_voice_wasapi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="codec2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hsmodem.h">
@@ -86,10 +98,25 @@
     <ClInclude Include="fec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bassflac.h">
+    <ClInclude Include="symboltracker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="symboltracker.h">
+    <ClInclude Include="bassenc_opus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bassenc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opus_defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opus_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="codec2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

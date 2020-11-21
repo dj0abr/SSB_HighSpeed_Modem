@@ -176,8 +176,9 @@ namespace oscardata
                 {
                     // send as the last frame
                     Array.Copy(txdata, txpos, txarr, 0, restlen); // unused byte will be 0
-                    txudp(txarr, txtype, statics.LastFrame);
-                    txudp(txarr, txtype, statics.LastFrame);
+                    // send the last frame a couple of times
+                    for(int i=0; i<10; i++)
+                        txudp(txarr, txtype, statics.LastFrame);
                     setSending(false);  // transmission complete
                 }
                 else

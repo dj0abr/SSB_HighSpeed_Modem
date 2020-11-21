@@ -104,18 +104,19 @@ uint16_t *make_waterfall(float fre, int *retlen)
 
 void init_fft()
 {
+	/* 
 char fn[300];
+    * storing to a file in the working directory may be a problem under Windows, so we do not use wisdom files
+    sprintf(fn, "capture_fft_%d", fft_rate);	// wisdom file for each capture rate
 
-	sprintf(fn, "capture_fft_%d", fft_rate);	// wisdom file for each capture rate
-
-	fftw_import_wisdom_from_filename(fn);
+	fftw_import_wisdom_from_filename(fn);*/
 
 	din = (double *)fftw_malloc(sizeof(double) * fft_rate);
 	cpout = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * fft_rate);
 
 	plan = fftw_plan_dft_r2c_1d(fft_rate, din, cpout, FFTW_MEASURE);
 	
-	fftw_export_wisdom_to_filename(fn);
+	//fftw_export_wisdom_to_filename(fn);
 }
 
 void exit_fft()

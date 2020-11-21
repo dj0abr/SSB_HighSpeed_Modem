@@ -29,6 +29,7 @@ using System.Text;
 using System.IO;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
+using System.Threading;
 
 namespace oscardata
 {
@@ -42,6 +43,8 @@ namespace oscardata
         String old_tsip = "";
         bool modemrunning = false;
         receivefile recfile = new receivefile();
+        int last_initAudioStatus;
+        int last_initVoiceStatus;
 
         public Form1()
         {
@@ -59,6 +62,8 @@ namespace oscardata
             }
             else
                 statics.ostype = 1; // Linux
+
+            statics.CreateAllDirs();
 
             // set temp paths
             statics.zip_TXtempfilename = statics.addTmpPath(statics.zip_TXtempfilename);
@@ -192,18 +197,41 @@ namespace oscardata
             {
                 statics.GotAudioDevices = 2;
                 // populate combo boxes
+                cb_audioPB.BeginUpdate();
+                cb_audioPB.Items.Clear();
+                cb_loudspeaker.BeginUpdate();
+                cb_loudspeaker.Items.Clear();
                 foreach (String s in statics.AudioPBdevs)
                 {
-                    if(s.Length > 1)
+                    if (s.Length > 1)
+                    {
                         cb_audioPB.Items.Add(s);
+                        cb_loudspeaker.Items.Add(s);
+                    }
                 }
+                cb_loudspeaker.EndUpdate();
+                cb_audioPB.EndUpdate();
+                // check if displayed text is available in the item list
+                findDevice(cb_loudspeaker);
+                findDevice(cb_audioPB);
+
+                cb_audioCAP.BeginUpdate();
+                cb_audioCAP.Items.Clear();
+                cb_mic.BeginUpdate();
+                cb_mic.Items.Clear();
                 foreach (String s in statics.AudioCAPdevs)
                 {
                     if (s.Length > 1)
+                    {
                         cb_audioCAP.Items.Add(s);
+                        cb_mic.Items.Add(s);
+                    }
                 }
+                cb_mic.EndUpdate();
+                cb_audioCAP.EndUpdate();
+                findDevice(cb_mic);
+                findDevice(cb_audioCAP);
             }
-
 
             if (setPBvolume >= 0)
             {
@@ -222,15 +250,124 @@ namespace oscardata
                 Udp.UdpSendCtrl(txdata);
                 setCAPvolume = -1;
             }
+
+            if (setLSvolume >= 0)
+            {
+                Byte[] txdata = new byte[2];
+                txdata[0] = (Byte)statics.SetLSvolume;
+                txdata[1] = (Byte)setLSvolume;
+                Udp.UdpSendCtrl(txdata);
+                setLSvolume = -1;
+            }
+
+            if (setMICvolume != -1)
+            {
+                Byte[] txdata = new byte[2];
+                txdata[0] = (Byte)statics.SetMICvolume;
+                txdata[1] = (Byte)setMICvolume;
+                Udp.UdpSendCtrl(txdata);
+                setMICvolume = -1;
+            }
+
+            if (last_initAudioStatus != statics.initAudioStatus)
+            {
+                if ((statics.initAudioStatus & 1) == 1) 
+                    pb_audioPBstatus.BackgroundImage = Properties.Resources.fail;
+                else 
+                    pb_audioPBstatus.BackgroundImage = Properties.Resources.ok;
+
+                if ((statics.initAudioStatus & 2) == 2) 
+                    pb_audioCAPstatus.BackgroundImage = Properties.Resources.fail;
+                else 
+                    pb_audioCAPstatus.BackgroundImage = Properties.Resources.ok;
+
+                last_initAudioStatus = statics.initAudioStatus;
+            }
+
+            if (last_initVoiceStatus != statics.initVoiceStatus)
+            {
+                if ((statics.initVoiceStatus & 1) == 1)
+                    pb_voicePBstatus.BackgroundImage = Properties.Resources.fail;
+                else
+                    pb_voicePBstatus.BackgroundImage = Properties.Resources.ok;
+
+                if ((statics.initVoiceStatus & 2) == 2)
+                    pb_voiceCAPstatus.BackgroundImage = Properties.Resources.fail;
+                else
+                    pb_voiceCAPstatus.BackgroundImage = Properties.Resources.ok;
+
+                last_initVoiceStatus = statics.initVoiceStatus;
+            }
         }
+
+        // correct entries in the Audio Device Comboboxes if Devices have changed
+        void findDevice(ComboBox cb)
+        {
+            int pos = -1;
+
+            if (cb.Text.Length >= 4)
+            {
+                // Device Name starts at Index 3 in the string
+                String dn = cb.Text.Substring(3);
+                int anz = cb.Items.Count;
+                for (int i = 0; i < anz; i++)
+                {
+                    String name = cb.Items[i].ToString();
+                    name = name.Substring(3);
+                    if (dn == name)
+                    {
+                        pos = i;
+                        break;
+                    }
+                }
+            }
+
+            if (pos == -1)
+            {
+                // not available, reset to first item which usually is Default
+                if (cb.Items.Count == 0)
+                    cb.Text = "no sound devices available";
+                else
+                    cb.Text = cb.Items[0].ToString();
+            }
+            else
+                cb.Text = cb.Items[pos].ToString();
+        }
+
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             save_Setup();
+
             if (cb_autostart.Checked)
             {
-                statics.killall("hsmodem");
-                statics.killall("hsmodem.exe");
+                // tell hsmodem to terminate itself
+                Byte[] txdata = new byte[1];
+                txdata[0] = (Byte)statics.terminate;
+                Udp.UdpSendCtrl(txdata);
+
+                Thread.Sleep(250);
+
+                if (statics.ostype == 0)
+                {
+                    int to = 0;
+                    while(statics.isProcRunning("hsmodem.exe"))
+                    {
+                        Thread.Sleep(250);
+                        // tell hsmodem to terminate itself
+                        Udp.UdpSendCtrl(txdata);
+                        if (++to >= 10) break;  // give up after 2,5s
+                    }
+
+                    if (to >= 10)
+                        statics.killall("hsmodem.exe");
+                }
+                else
+                {
+                    Thread.Sleep(250);
+                    statics.killall("hsmodem");
+                }
+                
             }
             // exit the threads
             statics.running = false;
@@ -263,13 +400,6 @@ namespace oscardata
                 int dummy5 = rxd[9];
 
                 rxbytecounter += statics.UdpBlocklen;
-
-                trackBar_maxlevel.Value = maxlevel;
-                int v1 = 255;
-                int v2 = 220;
-                if (maxlevel < 20 || maxlevel > 70) trackBar_maxlevel.BackColor = Color.FromArgb(v1,v2,v2);
-                else if (maxlevel < 30 || maxlevel > 60) trackBar_maxlevel.BackColor = Color.FromArgb(v1, v1, v2);
-                else trackBar_maxlevel.BackColor = Color.FromArgb(v2, v1, v2);
 
                 Byte[] rxdata = new byte[rxd.Length - 10];
                 Array.Copy(rxd, 10, rxdata, 0, rxd.Length - 10);
@@ -334,6 +464,10 @@ namespace oscardata
                         printText(rtb_RXfile, "transmission speed: " + ((int)(recfile.filesize * 8 / recfile.runtime.TotalSeconds)).ToString() + " bit/s" + "\r\n\r\n");
                         printText(rtb_RXfile, "file size         : " + recfile.filesize + " byte\r\n\r\n");
                         printText(rtb_RXfile, "file name         : " + recfile.filename + "\r\n\r\n");
+                        if(recfile.filename.Length <= 1)
+                        {
+                            printText(rtb_RXfile, "file status       : not complete, retransmit\r\n\r\n");
+                        }
                     }
                 }
 
@@ -378,6 +512,11 @@ namespace oscardata
             if (statics.PBfifousage < progressBar_fifo.Minimum)         progressBar_fifo.Value = progressBar_fifo.Minimum;
             else if (statics.PBfifousage >= progressBar_fifo.Maximum)   progressBar_fifo.Value = progressBar_fifo.Maximum-1;
             else                                                        progressBar_fifo.Value = statics.PBfifousage;
+
+            progressBar_capfifo.Invalidate();
+            if (statics.CAPfifousage < progressBar_capfifo.Minimum) progressBar_capfifo.Value = progressBar_capfifo.Minimum;
+            else if (statics.CAPfifousage >= progressBar_capfifo.Maximum) progressBar_capfifo.Value = progressBar_capfifo.Maximum - 1;
+            else progressBar_capfifo.Value = statics.CAPfifousage;
         }
 
         private void panel_constel_Paint(object sender, PaintEventArgs e)
@@ -877,14 +1016,18 @@ namespace oscardata
             label_txfile.Location = new Point(rtb_TXfile.Location.X, ly);
             label_rxfile.Location = new Point(rtb_RXfile.Location.X, ly);
 
-            trackBar_maxlevel.Location = new Point(panel_txspectrum.Location.X + panel_txspectrum.Size.Width + 5, panel_txspectrum.Location.Y);
-            trackBar_maxlevel.Size = new Size(20, panel_txspectrum.Size.Height);
-
-            label_speed.Location = new Point(trackBar_maxlevel.Location.X + trackBar_maxlevel.Size.Width + 15,panel_txspectrum.Location.Y+10);
+            label_speed.Location = new Point(panel_txspectrum.Location.X + panel_txspectrum.Size.Width + 15,panel_txspectrum.Location.Y+10);
             cb_speed.Location = new Point(label_speed.Location.X + label_speed.Size.Width + 10, label_speed.Location.Y-5);
 
-            label_fifo.Location = new Point(label_speed.Location.X, label_speed.Location.Y + 35);
-            progressBar_fifo.Location = new Point(cb_speed.Location.X, cb_speed.Location.Y + 35);
+            int y = 26;
+            label_fifo.Location = new Point(label_speed.Location.X, label_speed.Location.Y + y);
+            progressBar_fifo.Location = new Point(cb_speed.Location.X, cb_speed.Location.Y + y+5);
+            progressBar_fifo.Size = new Size(progressBar_fifo.Width, 18);
+
+            y = 20;
+            label_capfifo.Location = new Point(label_fifo.Location.X, label_fifo.Location.Y + y);
+            progressBar_capfifo.Location = new Point(progressBar_fifo.Location.X, progressBar_fifo.Location.Y + y);
+            progressBar_capfifo.Size = new Size(progressBar_capfifo.Width, 18);
         }
 
         public String GetMyBroadcastIP()
@@ -923,6 +1066,24 @@ namespace oscardata
             return x;
         }
 
+        Byte getLSaudioDevice()
+        {
+            String s = cb_loudspeaker.Text;
+            Byte x = (Byte)cb_loudspeaker.Items.IndexOf(s);
+            Console.WriteLine("LS:" + s + " " + x);
+            //if (s.ToUpper() == "DEFAULT") x = 255;
+            return x;
+        }
+
+        Byte getMICaudioDevice()
+        {
+            String s = cb_mic.Text;
+            Byte x = (Byte)cb_mic.Items.IndexOf(s);
+            Console.WriteLine("MIC:" + s + " " + x);
+            //if (s.ToUpper() == "DEFAULT") x = 255;
+            return x;
+        }
+
         /*
          * search for the modem IP:
          * send a search message via UDP to port UdpBCport
@@ -933,13 +1094,15 @@ namespace oscardata
 
         private void search_modem()
         {
-            Byte[] txb = new byte[6];
+            Byte[] txb = new byte[8];
             txb[0] = 0x3c;  // ID of this message
             txb[1] = getPBaudioDevice();
             txb[2] = getCAPaudioDevice();
             txb[3] = (Byte)tb_PBvol.Value;
             txb[4] = (Byte)tb_CAPvol.Value;
             txb[5] = (Byte)cb_announcement.Items.IndexOf(cb_announcement.Text);
+            txb[6] = (Byte)tb_loadspeaker.Value;
+            txb[7] = (Byte)tb_mic.Value;
 
             Udp.UdpBCsend(txb, GetMyBroadcastIP(), statics.UdpBCport_AppToModem);
 
@@ -1128,6 +1291,17 @@ namespace oscardata
                     s = ReadString(sr);
                     try { cb_stampinfo.Checked = (s == "1"); } catch { }
                     try { tb_info.Text = ReadString(sr); } catch { }
+                    try { cb_loudspeaker.Text = ReadString(sr); } catch { }
+                    try { cb_mic.Text = ReadString(sr);  } catch { }
+                    try { tb_loadspeaker.Value = ReadInt(sr); } catch { }
+                    try { tb_mic.Value = ReadInt(sr); } catch { }
+                    try
+                    {
+                        s = ReadString(sr);
+                        rb_opus.Checked = (s == "1");
+                        rb_codec2.Checked = (s != "1");
+                    }
+                    catch { }
                 }
             }
             catch
@@ -1158,6 +1332,11 @@ namespace oscardata
                     sw.WriteLine(cb_announcement.Text);
                     sw.WriteLine(cb_stampinfo.Checked ? "1" : "0");
                     sw.WriteLine(tb_info.Text);
+                    sw.WriteLine(cb_loudspeaker.Text);
+                    sw.WriteLine(cb_mic.Text);
+                    sw.WriteLine(tb_loadspeaker.Value.ToString());
+                    sw.WriteLine(tb_mic.Value.ToString());
+                    sw.WriteLine(rb_opus.Checked ? "1" : "0");
                 }
             }
             catch { }
@@ -1207,6 +1386,138 @@ namespace oscardata
         private void tb_CAPvol_Scroll(object sender, EventArgs e)
         {
             setCAPvolume = tb_CAPvol.Value;
+        }
+
+        private void bt_blockinfo_Click(object sender, EventArgs e)
+        {
+            String s;
+            int[] d = new int[2];
+            recfile.oldblockinfo(d);
+            int failed = d[0] - d[1];
+
+            s = "Received Blocks\n" +
+                "---------------\n" +
+                "total : " + d[0] + "\n" +
+                "good  : " + d[1] + "\n" +
+                "failed: " + failed + "\n";
+            if(failed > 1)
+            {
+                s += "\nfile incomplete, ask for retransmission";
+            }
+
+            Form2_showtext sf = new Form2_showtext("Block Info",s);
+            sf.ShowDialog();
+        }
+
+        void setVoiceAudio()
+        {
+            Byte[] txdata = new byte[5];
+            txdata[0] = (Byte)statics.SetVoiceMode;
+            txdata[1] = (Byte)getLSaudioDevice();
+            txdata[2] = (Byte)getMICaudioDevice();
+            Byte opmode = 0;
+            // values see: hsmodem.h _VOICEMODES_
+            if (cb_switchtoLS.Checked) opmode = 1;
+            if (cb_voiceloop.Checked) opmode = 2;
+            if (cb_codecloop.Checked) opmode = 3;
+            if (cb_digitalVoice.Checked) opmode = 4;
+            if (cb_digitalVoiceRXonly.Checked) opmode = 5;
+            if(opmode == 0) pb_voice.BackgroundImage = null;
+            txdata[3] = opmode;
+            Byte codec;
+            if (rb_opus.Checked) codec = 0;
+            else codec = 1;
+            txdata[4] = codec;
+            Udp.UdpSendCtrl(txdata);
+
+            if(opmode > 0)
+            {
+                rb_opus.Enabled = false;
+                rb_codec2.Enabled = false;
+            }
+            else
+            {
+                rb_opus.Enabled = true;
+                rb_codec2.Enabled = true;
+            }
+        }
+
+        private void cb_switchtoLS_CheckedChanged(object sender, EventArgs e)
+        {
+            if(cb_switchtoLS.Checked)
+            {
+                cb_voiceloop.Checked = false;
+                cb_codecloop.Checked = false;
+                cb_digitalVoice.Checked = false;
+                cb_digitalVoiceRXonly.Checked = false;
+                pb_voice.BackgroundImage = Properties.Resources.cdc_digital;
+            }
+            setVoiceAudio();
+        }
+
+        private void cb_voiceloop_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cb_voiceloop.Checked)
+            {
+                cb_switchtoLS.Checked = false;
+                cb_codecloop.Checked = false;
+                cb_digitalVoice.Checked = false;
+                cb_digitalVoiceRXonly.Checked = false;
+                pb_voice.BackgroundImage = Properties.Resources.cdc_intloop;
+            }
+            setVoiceAudio();
+        }
+
+        private void cb_codecloop_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cb_codecloop.Checked)
+            {
+                cb_switchtoLS.Checked = false;
+                cb_voiceloop.Checked = false;
+                cb_digitalVoice.Checked = false;
+                cb_digitalVoiceRXonly.Checked = false;
+                pb_voice.BackgroundImage = Properties.Resources.cdc_codecloop;
+            }
+            setVoiceAudio();
+        }
+
+        private void cb_digitalVoice_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cb_digitalVoice.Checked)
+            {
+                cb_switchtoLS.Checked = false;
+                cb_voiceloop.Checked = false;
+                cb_codecloop.Checked = false;
+                cb_digitalVoiceRXonly.Checked = false;
+                pb_voice.BackgroundImage = Properties.Resources.cdc_dv;
+            }
+            setVoiceAudio();
+        }
+
+        private void cb_digitalVoiceRXonly_CheckedChanged(object sender, EventArgs e)
+        {
+            if (cb_digitalVoiceRXonly.Checked)
+            {
+                cb_switchtoLS.Checked = false;
+                cb_voiceloop.Checked = false;
+                cb_codecloop.Checked = false;
+                cb_digitalVoice.Checked = false;
+                pb_voice.BackgroundImage = Properties.Resources.cdc_dvrx;
+            }
+            setVoiceAudio();
+        }
+
+        int setLSvolume = -1;
+        int setMICvolume = -1;
+
+        private void tb_loadspeaker_Scroll(object sender, EventArgs e)
+        {
+            setLSvolume = tb_loadspeaker.Value;
+        }
+
+        private void tb_mic_Scroll(object sender, EventArgs e)
+        {
+            setMICvolume = tb_mic.Value;
         }
     }
 }

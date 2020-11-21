@@ -22,6 +22,8 @@ namespace oscardata
         public static Byte AsciiFile = 3;
         public static Byte HTMLFile = 4;
         public static Byte BinaryFile = 5;
+        public static Byte Audio = 6;
+
         // the upper values are for internal use
         public static Byte ResamplingRate = 16;
         public static Byte AutosendFile = 17;
@@ -30,6 +32,10 @@ namespace oscardata
         public static Byte ResetModem = 20;
         public static Byte SetPBvolume = 21;
         public static Byte SetCAPvolume = 22;
+        public static Byte SetLSvolume = 23;
+        public static Byte SetMICvolume = 24;
+        public static Byte SetVoiceMode = 25;
+        public static Byte terminate = 26;
 
         // frame sequence, modem needs that for i.e. sending a preamble
         public static Byte FirstFrame = 0;
@@ -65,6 +71,9 @@ namespace oscardata
         public static String[] AudioPBdevs;
         public static String[] AudioCAPdevs;
         public static int PBfifousage = 0;
+        public static int CAPfifousage = 0;
+        public static int initAudioStatus;
+        public static int initVoiceStatus;
 
 
         public static String[] getOwnIPs()
@@ -198,6 +207,38 @@ namespace oscardata
             return home + filename;
         }
 
+        public static void CreateAllDirs()
+        {
+            String home = Application.UserAppDataPath;
+            String deli = "/";
+
+            if (statics.ostype == 0)
+                deli = "\\";
+
+            // create home directory
+            try
+            {
+                Directory.CreateDirectory(home);
+            }
+            catch { }
+
+            // create application path
+            home += deli + DataStorage;
+            try
+            {
+                Directory.CreateDirectory(home);
+            }
+            catch { }
+
+            // create image path
+            home += deli + RXimageStorage;
+            try
+            {
+                Directory.CreateDirectory(home);
+            }
+            catch { }
+        }
+
         // Returns the file's size.
         public static long GetFileSize(string file_name)
         {
@@ -303,6 +344,23 @@ namespace oscardata
             }
             catch { return false; }
             return true;
+        }
+
+        // checks if a process is running
+        static public bool isProcRunning(String s)
+        {
+            bool running = false;
+
+            if (ostype == 0)
+            {
+                foreach (var process in Process.GetProcessesByName(s))
+                {
+                    running = true;
+                    break;
+                }
+            }
+
+            return running;
         }
 
         static public void killall(String s)

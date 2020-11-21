@@ -33,6 +33,7 @@ namespace oscardata
         static UdpQueue uq_iq = new UdpQueue();
 
         public static int searchtimeout = 0;
+        static String last_audiodevstring = "";
 
         // Constructor
         // called when Udp is created by the main program
@@ -96,11 +97,22 @@ namespace oscardata
                         {
                             statics.ModemIP = RemoteEndpoint.Address.ToString();
                             searchtimeout = 0;
-                            // message b contains audio devices
-                            String s = statics.ByteArrayToString(b);
+                            // message b contains audio devices and init status
+                            statics.initAudioStatus = b[0];
+                            statics.initVoiceStatus = b[1];
+
+                            String s = statics.ByteArrayToString(b,2);
                             String[] sa1 = s.Split(new char[] { '^' });
                             statics.AudioPBdevs = sa1[0].Split(new char[] { '~' });
                             statics.AudioCAPdevs = sa1[1].Split(new char[] { '~' }); 
+
+                            // has the device list changed ?
+                            if(s != last_audiodevstring)
+                            {
+                                statics.GotAudioDevices = 1;
+                                last_audiodevstring = s;
+                            }
+
                             if(statics.GotAudioDevices == 0)
                                 statics.GotAudioDevices = 1;
                         }
@@ -109,8 +121,9 @@ namespace oscardata
                         if (rxtype == statics.udp_fft)
                         {
                             statics.PBfifousage = b[0];
-                            Byte[] b1 = new byte[b.Length - 1];
-                            Array.Copy(b, 1, b1, 0, b1.Length);
+                            statics.CAPfifousage = b[1];
+                            Byte[] b1 = new byte[b.Length - 2];
+                            Array.Copy(b, 2, b1, 0, b1.Length);
                             uq_fft.Add(b1);
                         }
 

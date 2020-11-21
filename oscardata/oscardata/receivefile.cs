@@ -67,6 +67,9 @@ namespace oscardata
         int blockidx;
         Byte[] firstblock;
 
+        bool[] lastblockvalid = new bool[1024];
+        int lastblockidx;
+
         bool receiving = false;
         public String filename = null;
         public String StatusText = "";
@@ -97,26 +100,6 @@ namespace oscardata
                 filesize = 0;
                 filename = "";
                 if (!StartFileRX()) return false;   // invalid file
-
-                // check if file already exists
-                if (fileExists())
-                {
-                    // exists already, no need to receive
-                    filename = makeRXfilename();
-
-                    if (rxtype == statics.Image)
-                    {
-                        try
-                        {
-                            // show existing image
-                            Image img = Image.FromFile(filename);
-                            pbmp = new Bitmap(img);
-                        }
-                        catch { pbmp = null; }
-                    }
-                    receiving = false;
-                    return true;
-                }
             }
 
             if (minfo != statics.FirstFrame)
@@ -281,7 +264,19 @@ namespace oscardata
             result[0] = blockidx+1; // +1 because we start with block 0
             result[1] = ok;
 
+            Array.Copy(blockvalid, lastblockvalid, blockvalid.Length);
+            lastblockidx = blockidx;
+
             return true;
+        }
+
+        public void oldblockinfo(int[] result)
+        {
+            int ok = 0;
+            for (int i = 0; i <= lastblockidx; i++)
+                if (lastblockvalid[i]) ok++;
+            result[0] = lastblockidx + 1; // +1 because we start with block 0
+            result[1] = ok;
         }
 
         void saveBlocks()
@@ -390,20 +385,6 @@ namespace oscardata
             return fn;
         }
 
-        bool fileExists()
-        {
-            String fn = makeRXfilename();
-            if (!File.Exists(fn)) return false;
-
-            // File exists, but is the ID the same ?
-            Byte[] ba = File.ReadAllBytes(fn);
-            if (ba == null) return false;
-            Crc c = new Crc();
-            int fncrc = c.crc16_messagecalc(ba, ba.Length);
-            if (ArraySend.FileID != fncrc) return false;
-            return true;
-        }
-
         bool SaveFile()
         {
             Console.WriteLine("save file");
@@ -492,42 +473,49 @@ namespace oscardata
                 return;
             }
 
-            // filename has the received data, but maybe too long (multiple of payload length)
-            // reduce for the real file length
-            Byte[] fc = File.ReadAllBytes(filename);
-            Byte[] fdst = new byte[ArraySend.FileSize];
-            if (fc.Length < ArraySend.FileSize)
+            try
             {
-                Console.WriteLine("file not complete: got len=" + fc.Length + " expected len=" + ArraySend.FileSize);
-                return;
-            }
-            Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
-            File.WriteAllBytes(statics.zip_RXtempfilename, fdst);   // the received file (still zipped) is here
+                // filename has the received data, but maybe too long (multiple of payload length)
+                // reduce for the real file length
+                Byte[] fc = File.ReadAllBytes(filename);
+                Byte[] fdst = new byte[ArraySend.FileSize];
+                if (fc.Length < ArraySend.FileSize)
+                {
+                    Console.WriteLine("file not complete: got len=" + fc.Length + " expected len=" + ArraySend.FileSize);
+                    return;
+                }
+                Array.Copy(fc, 0, fdst, 0, ArraySend.FileSize);
+                File.WriteAllBytes(statics.zip_RXtempfilename, fdst);   // the received file (still zipped) is here
 
-            // unzip received data and store result in file: unzipped_RXtempfilename
-            ZipStorer zs = new ZipStorer();
-            String fl = zs.unzipFile(statics.zip_RXtempfilename);
-            if (fl != null)
-            {
-                // save file
-                // fl is the filename of the file inside the zip file, so the originally zipped file
-                // remove path to get just the filename
-                int idx = fl.LastIndexOf('/');
-                if (idx == -1) idx = fl.LastIndexOf('\\');
-                String fdest = fl.Substring(idx + 1);
-                fdest = statics.getHomePath("", fdest);
-                // fdest is the file in the oscardata's user home directoty
-                // remove old file with same name
-                try { File.Delete(fdest); } catch { }
-                // move the unzipped file to the final location
-                File.Move(fl, fdest);
-                filesize = statics.GetFileSize(fdest);
-                StatusText = "unzip OK";
+                // unzip received data and store result in file: unzipped_RXtempfilename
+                ZipStorer zs = new ZipStorer();
+                String fl = zs.unzipFile(statics.zip_RXtempfilename);
+                if (fl != null)
+                {
+                    // save file
+                    // fl is the filename of the file inside the zip file, so the originally zipped file
+                    // remove path to get just the filename
+                    int idx = fl.LastIndexOf('/');
+                    if (idx == -1) idx = fl.LastIndexOf('\\');
+                    String fdest = fl.Substring(idx + 1);
+                    fdest = statics.getHomePath("", fdest);
+                    // fdest is the file in the oscardata's user home directoty
+                    // remove old file with same name
+                    try { File.Delete(fdest); } catch { }
+                    // move the unzipped file to the final location
+                    File.Move(fl, fdest);
+                    filesize = statics.GetFileSize(fdest);
+                    StatusText = "unzip OK";
+                }
+                else
+                    StatusText = "unzip failed";
+
+                File.Delete(statics.zip_RXtempfilename);
             }
-            else
+            catch
+            {
                 StatusText = "unzip failed";
-
-            File.Delete(statics.zip_RXtempfilename);
+            }
         }
     }
 }

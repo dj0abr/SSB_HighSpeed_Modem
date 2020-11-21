@@ -24,14 +24,12 @@
 * wasapi is needed because we need exclusive access to the sound card which is not provided for Windows with the normal bass.lib
 */
 
-
 #include "hsmodem.h"
 
 #ifdef _WIN32_
 
 #define WASAPI_CHANNELS 2   // wasapi works with 2 only
 
-void init_pipes();
 void cap_write_fifo(float sample);
 int pb_read_fifo(float* data, int elements);
 void close_wasapi();
@@ -48,104 +46,143 @@ extern int opencapdev;
 
 float softwareCAPvolume = 0.5;
 
-int use_wasapi = -1;
+
 
 int init_wasapi(int pbdev, int capdev)
 {
-    close_wasapi();
+    int ret = 0;
 
-    use_wasapi = -1;
+    close_wasapi();
 
     // ======= init PLAYBACK device ========
 
     // initialize default output device
-    if (!BASS_WASAPI_Init(pbdev, caprate, WASAPI_CHANNELS, BASS_WASAPI_EXCLUSIVE, 0.1f/*buffer in seconds*/, 0, PBcallback_wasapi, NULL))
+    if (!BASS_WASAPI_Init(pbdev, caprate, WASAPI_CHANNELS, BASS_WASAPI_EXCLUSIVE, 0.1f, 0, PBcallback_wasapi, NULL))
     {
         printf("Can't initialize output device: %d err:%d\n", pbdev, BASS_ErrorGetCode());
-        return -1;
+        ret = 1;
     }
-
-    // read real device number since a -1 cannot be started
-    int ret = BASS_WASAPI_GetDevice();
-    if (ret == -1)
+    else
     {
-        printf("BASS_WASAPI_GetDevice: %d err:%d\n", pbdev, BASS_ErrorGetCode());
-        return -1;
-    }
-    pbdev = ret;
 
-    // read the possible volume settings
-    BASS_WASAPI_INFO info;
-    if (!BASS_WASAPI_GetInfo(&info))
-    {
-        printf("BASS_WASAPI_GetInfo: %d err:%d\n", pbdev, BASS_ErrorGetCode());
-        return -1;
-    }
-    minPBvol = info.volmin;
-    maxPBvol = info.volmax;
+        // read real device number since a -1 cannot be started
+        int device = BASS_WASAPI_GetDevice();
+        if (device == -1)
+        {
+            printf("BASS_WASAPI_GetDevice: %d err:%d\n", pbdev, BASS_ErrorGetCode());
+            ret = 1;
+        }
+        else
+        {
+            pbdev = device;
 
-    // start playback
-    if (!BASS_WASAPI_Start())
-    {
-        printf("BASS_WASAPI_Start: %d err:%d\n", pbdev, BASS_ErrorGetCode());
-        return -1;
+            // read the possible volume settings
+            BASS_WASAPI_INFO info;
+            if (!BASS_WASAPI_GetInfo(&info))
+            {
+                printf("BASS_WASAPI_GetInfo: %d err:%d\n", pbdev, BASS_ErrorGetCode());
+                ret = 1;
+            }
+            else
+            {
+                minPBvol = info.volmin;
+                maxPBvol = info.volmax;
+
+                // start playback
+                if (!BASS_WASAPI_Start())
+                {
+                    printf("BASS_WASAPI_Start: %d err:%d\n", pbdev, BASS_ErrorGetCode());
+                    ret = 1;
+                }
+                else
+                    openpbdev = pbdev;
+            }
+        }
     }
 
     // ======= init CAPTURE device ========
 
     // initalize default recording device
     if (capdev == -1) capdev = -2;  // cap: -2 is the default device for input
-    if (!BASS_WASAPI_Init(capdev, caprate, WASAPI_CHANNELS, BASS_WASAPI_EXCLUSIVE, 0.1f/*buffer in seconds*/, 0, CAPcallback_wasapi, NULL))
+    if (!BASS_WASAPI_Init(capdev, caprate, WASAPI_CHANNELS, BASS_WASAPI_EXCLUSIVE, 0.1f, 0, CAPcallback_wasapi, NULL))
     {
         printf("Can't initialize recording device: %d err:%d\n", capdev, BASS_ErrorGetCode());
-        return -1;
+        ret |= 2;
     }
-
-    // read real device number since a -2 cannot be started
-    ret = BASS_WASAPI_GetDevice();
-    if (ret == -1)
+    else
     {
-        printf("BASS_WASAPI_GetDevice: %d err:%d\n", capdev, BASS_ErrorGetCode());
-        return -1;
-    }
-    capdev = ret;
 
-    // read the possible volume settings
-    if (!BASS_WASAPI_GetInfo(&info))
+        // read real device number since a -2 cannot be started
+        int device = BASS_WASAPI_GetDevice();
+        if (device == -1)
+        {
+            printf("BASS_WASAPI_GetDevice: %d err:%d\n", capdev, BASS_ErrorGetCode());
+            ret |= 2;
+        }
+        else
+        {
+            capdev = device;
+
+            // read the possible volume settings
+            BASS_WASAPI_INFO info;
+            if (!BASS_WASAPI_GetInfo(&info))
+            {
+                printf("BASS_WASAPI_GetInfo: %d err:%d\n", pbdev, BASS_ErrorGetCode());
+                ret |= 2;
+            }
+            else
+            {
+                minCAPvol = info.volmin;
+                maxCAPvol = info.volmax;
+
+                // start recording
+                if (!BASS_WASAPI_Start())
+                {
+                    printf("BASS_WASAPI_Start: %d err:%d\n", capdev, BASS_ErrorGetCode());
+                    ret |= 2;
+                }
+                else
+                    opencapdev = capdev;
+            }
+        }
+    }
+
+    if (ret == 0)
+        printf("WASAPI started successfully for PBdev:%d and CAPdev:%d\n", openpbdev, opencapdev);
+    else
     {
-        printf("BASS_WASAPI_GetInfo: %d err:%d\n", pbdev, BASS_ErrorGetCode());
-        return -1;
+        opencapdev = -1;
+        openpbdev = -1;
+        readAudioDevices();
     }
-    minCAPvol = info.volmin;
-    maxCAPvol = info.volmax;
+    if (ret == 1)
+        printf("wasapi audio initialized: PBerror CapOK\n");
+    if (ret == 2)
+        printf("wasapi audio initialized: PBOK CapERROR\n");
+    if (ret == 3)
+        printf("wasapi audio initialized: PBerror CapERROR\n");
 
-    // start recording
-    if (!BASS_WASAPI_Start())
-    {
-        printf("BASS_WASAPI_Start: %d err:%d\n", capdev, BASS_ErrorGetCode());
-        return -1;
-    }
-
-    printf("WASAPI started successfully for PBdev:%d and CAPdev:%d\n", pbdev, capdev);
-
-    openpbdev = pbdev;
-    opencapdev = capdev;
-
-    use_wasapi = 0;
-
-    return 0;
+    return ret;
 }
 
-void selectPBdevice_wasapi()
+int selectPBdevice_wasapi()
 {
     if (!BASS_WASAPI_SetDevice(openpbdev))
+    {
         printf("BASS_WASAPI_SetDevice: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+        return 0;
+    }
+    return 1;
 }
 
-void selectCAPdevice_wasapi()
+int selectCAPdevice_wasapi()
 {
     if (!BASS_WASAPI_SetDevice(opencapdev))
+    {
         printf("BASS_WASAPI_SetDevice: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+        return 0;
+    }
+    return 1;
 }
 
 void setPBvolume(int v)
@@ -159,9 +196,9 @@ void setPBvolume(int v)
 
     //printf("set PB volume to:%d / %f [%f..%f]\n", v, vf, minPBvol, maxPBvol);
 
-    selectPBdevice_wasapi();
-    if (!BASS_WASAPI_SetVolume(BASS_WASAPI_CURVE_DB, vf))
-        printf("setPBvolume: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+    if(selectPBdevice_wasapi())
+        if (!BASS_WASAPI_SetVolume(BASS_WASAPI_CURVE_DB, vf))
+            printf("setPBvolume: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
 }
 
 void setCAPvolume(int v)
@@ -178,14 +215,14 @@ void close_wasapi()
 
     if (openpbdev != -1)
     {
-        selectPBdevice_wasapi();
-        if (!BASS_WASAPI_Free()) printf("BASS_WASAPI_Free: dev:%d err:%d\n", openpbdev, BASS_ErrorGetCode());
+        if(selectPBdevice_wasapi())
+            if (!BASS_WASAPI_Free()) printf("BASS_WASAPI_Free: dev:%d err:%d\n", openpbdev, BASS_ErrorGetCode());
     }
 
     if (opencapdev != -1)
     {
-        selectCAPdevice_wasapi();
-        if (!BASS_WASAPI_Free()) printf("BASS_WASAPI_Free: dev:%d err:%d\n", opencapdev, BASS_ErrorGetCode());
+        if(selectCAPdevice_wasapi())
+            if (!BASS_WASAPI_Free()) printf("BASS_WASAPI_Free: dev:%d err:%d\n", opencapdev, BASS_ErrorGetCode());
     }
 }
 
@@ -216,44 +253,7 @@ DWORD CALLBACK PBcallback_wasapi(void* buffer, DWORD length, void* user)
     free(fdata);
     return length;
 }
-/*
-#define MCHECK 10
-void nullChecker(float fv, float *pbuf, DWORD len)
-{
-    static float farr[MCHECK];
-    static int idx = 0;
-    static int f = 1;
-    static int anz = 0;
 
-    if (f)
-    {
-        f = 0;
-        for (int i = 0; i < MCHECK; i++)
-            farr[i] = 1;
-    }
-
-    farr[idx] = fv;
-    idx++;
-    if (idx == MCHECK) idx = 0;
-
-    float nu = 0;
-    for (int i = 0; i < MCHECK; i++)
-    {
-        nu += farr[i];
-    }
-
-    if (nu == 0)
-    {
-        // how many 00s ar in the current buffer
-        int a = 0;
-        for (unsigned int i = 0; i < len-1; i++)
-        {
-            if (pbuf[i] == 0 && pbuf[i+1] == 0) a++;
-        }
-        printf("=============== null sequence detected: %d len:%d nullanz:%d\n",anz++,len,a);
-    }
-}
-*/
 DWORD CALLBACK CAPcallback_wasapi(void* buffer, DWORD length, void* user)
 {
     //printf("CAP callback, len:%d\n",length);

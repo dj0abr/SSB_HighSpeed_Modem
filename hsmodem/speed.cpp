@@ -26,7 +26,7 @@
 
 int speed = 0;
 
-#define MAXSPDARR   5
+#define MAXSPDARR   50
 int spdarr[MAXSPDARR];
 int spdarrbps[MAXSPDARR];
 
@@ -82,12 +82,12 @@ static int f=1;
 
 int meanvalbps(int v)
 {
-    static int f = 1;
+    static int f = 5;
 
     if (f)
     {
+        f--;
         for (int i = 0; i < MAXSPDARR; i++) spdarrbps[i] = -1;
-        f = 0;
     }
 
     for (int i = (MAXSPDARR - 1); i > 0; i--)

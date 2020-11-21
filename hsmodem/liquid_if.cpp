@@ -53,10 +53,7 @@ modulation_scheme getMod()
         return LIQUID_MODEM_QPSK;
     else
     {
-        if(psk8mode == 0)
-            return LIQUID_MODEM_APSK8;
-        else
-            return LIQUID_MODEM_PSK8;
+        return LIQUID_MODEM_APSK8;
     }
 }
 
@@ -281,8 +278,13 @@ void make_FFTdata(float f)
 
         int bidx = 0;
         txpl[bidx++] = 4;    // type 4: FFT data follows
+
         int us = pb_fifo_usedBlocks();
         if (us > 255 || ann_running == 1) us = 255;
+        txpl[bidx++] = us;    // usage of TX fifo
+
+        us = cap_fifo_usedPercent();
+        if (us > 255) us = 255;
         txpl[bidx++] = us;    // usage of TX fifo
 
         for (int i = 0; i < fftlen; i++)

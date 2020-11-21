@@ -73,7 +73,7 @@ int keeprunning = 1;
 // UDP I/O
 int BC_sock_AppToModem = -1;
 int DATA_sock_AppToModem = -1;
-int DATA_sock_from_GR = -1;
+//int DATA_sock_from_GR = -1;
 int DATA_sock_FFT_from_GR = -1;
 int DATA_sock_I_Q_from_GR = -1;
 
@@ -81,17 +81,11 @@ int UdpBCport_AppToModem = 40131;
 int UdpDataPort_AppToModem = 40132;
 int UdpDataPort_ModemToApp = 40133;
 
-int UdpDataPort_toGR = 40134;
-int UdpDataPort_fromGR = 40135;
-int UdpDataPort_fromGR_FFT = 40136;
-int UdpDataPort_fromGR_I_Q = 40137;
-
 // op mode depending values
 // default mode if not set by the app
 int speedmode = 2;
 int bitsPerSymbol = 2;      // QPSK=2, 8PSK=3
 int constellationSize = 4;  // QPSK=4, 8PSK=8
-int psk8mode=0;             // 0=APSK8, 1=PSK8
 
 char localIP[] = { "127.0.0.1" };
 char ownfilename[] = { "hsmodem" };
@@ -106,9 +100,16 @@ int linespeed = 4410;
 
 int captureDeviceNo = -1;
 int playbackDeviceNo = -1;
+int MicDeviceNo = -1;
+int LSDeviceNo = -1;
 int initialPBvol = -1;
 int initialCAPvol = -1;
 int announcement = 0;
+int VoiceAudioMode = VOICEMODE_OFF;
+int codec = 1;  // 0=opus, 1=codec2
+
+int init_audio_result = 0;
+int init_voice_result = 0;
 
 int main(int argc, char* argv[])
 {
@@ -169,17 +170,19 @@ int main(int argc, char* argv[])
         }
     }
 #endif
+
     
     init_packer();
-    
     initFEC();
     init_fft();
-    int ar = init_audio(playbackDeviceNo, captureDeviceNo);
+    init_voiceproc();
+
+    /*int ar = init_audio(playbackDeviceNo, captureDeviceNo);
     if (ar == -1)
     {
         keeprunning = 0;
         exit(0);
-    }
+    }*/
 
     // start udp RX to listen for broadcast search message from Application
     UdpRxInit(&BC_sock_AppToModem, UdpBCport_AppToModem, &bc_rxdata, &keeprunning);
@@ -188,7 +191,7 @@ int main(int argc, char* argv[])
     UdpRxInit(&DATA_sock_AppToModem, UdpDataPort_AppToModem, &appdata_rxdata, &keeprunning);
 
     // start udp RX to listen for data from GR Receiver
-    UdpRxInit(&DATA_sock_from_GR, UdpDataPort_fromGR, &GRdata_rxdata, &keeprunning);
+    //UdpRxInit(&DATA_sock_from_GR, UdpDataPort_fromGR, &GRdata_rxdata, &keeprunning);
 
     printf("QO100modem initialised and running\n");
 
@@ -201,9 +204,46 @@ int main(int argc, char* argv[])
         }
 
         //doArraySend();
+        if (VoiceAudioMode == VOICEMODE_INTERNALLOOP)
+        {
+            // loop voice mic to LS
+            float f;
+            if (cap_read_fifo_voice(&f))
+            {
+                if(softwareCAPvolume_voice >= 0)
+                    f *= softwareCAPvolume_voice;
+                pb_write_fifo_voice(f);
+            }
+        }
 
-        if (demodulator() == 0)
-            sleep_ms(10);
+        if (VoiceAudioMode == VOICEMODE_CODECLOOP || VoiceAudioMode == VOICEMODE_DV_FULLDUPLEX)
+        {
+            // send mic to codec
+            float f;
+            if (cap_read_fifo_voice(&f))
+            {
+                if (softwareCAPvolume_voice >= 0)
+                    f *= softwareCAPvolume_voice;
+                encode(f);
+            }
+        }
+
+        // demodulate incoming audio data stream
+        static int old_tm = 0;
+        int tm = getus();
+        if (tm >= (old_tm + 1000000))
+        {
+            // read Audio device list every 1s
+            readAudioDevices();
+            old_tm = tm;
+        }
+
+        int dret = demodulator();
+
+#ifdef _LINUX_
+        if(dret == 0)
+            usleep(1);
+#endif
     }
     printf("stopped: %d\n", keeprunning);
 
@@ -225,32 +265,26 @@ typedef struct {
     int rx;
     int bpsym;
     int linespeed;
+    int codecrate;
 } SPEEDRATE;
 
+// AudioRate, TX-Resampler, RX-Resampler/4, bit/symbol, Codec-Rate
 SPEEDRATE sr[8] = {
     // QPSK modes
-    {48000, 32, 8, 2, 3000}, // AudioRate, TX-Resampler, RX-Resampler/4, bit/symbol, see samprate.ods
-    {48000, 24, 6, 2, 4000},
-    {44100, 20, 5, 2, 4410},
-    {48000, 20, 5, 2, 4800},
+    {48000, 32, 8, 2, 3000, 2400}, 
+    {48000, 24, 6, 2, 4000, 3200},
+    {44100, 20, 5, 2, 4410, 3600},
+    {48000, 20, 5, 2, 4800, 4000},
 
     // 8PSK modes
-    {44100, 24, 6, 3, 5500},
-    {48000, 24, 6, 3, 6000},
-    {44100, 20, 5, 3, 6600},
-    {48000, 20, 5, 3, 7200}
+    {44100, 24, 6, 3, 5500, 4400},
+    {48000, 24, 6, 3, 6000, 4800},
+    {44100, 20, 5, 3, 6600, 5200},
+    {48000, 20, 5, 3, 7200, 6000}
 };
 
 void startModem()
 {
-    if (speedmode >= 8)
-    {
-        speedmode = speedmode - 4;
-        psk8mode = 1;
-    }
-    else
-        psk8mode = 0;
-
     bitsPerSymbol = sr[speedmode].bpsym;
     constellationSize = (1 << bitsPerSymbol); // QPSK=4, 8PSK=8
 
@@ -258,16 +292,17 @@ void startModem()
     txinterpolfactor = sr[speedmode].tx;
     rxPreInterpolfactor = sr[speedmode].rx;
     linespeed = sr[speedmode].linespeed;
+    opusbitrate = sr[speedmode].codecrate;
 
     // int TX audio and modulator
     close_dsp();
-    init_audio(playbackDeviceNo, captureDeviceNo);
+    init_audio_result = init_audio(playbackDeviceNo, captureDeviceNo);
     setPBvolume(initialPBvol);
     setCAPvolume(initialCAPvol);
     init_dsp();
 }
 
-void setAudioDevices(int pb, int cap, int pbvol, int capvol, int announce)
+void setAudioDevices(int pb, int cap, int pbvol, int capvol, int announce, int pbls, int pbmic)
 {
     //printf("%d %d\n", pb, cap);
 
@@ -278,6 +313,8 @@ void setAudioDevices(int pb, int cap, int pbvol, int capvol, int announce)
         captureDeviceNo = cap;
         initialPBvol = pbvol;
         initialCAPvol = capvol;
+        initialLSvol = pbls;
+        initialMICvol = pbmic;
     }
 
     announcement = announce;
@@ -288,7 +325,7 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
     if (len > 0 && pdata[0] == 0x3c)
     {
-        setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4], pdata[5]);
+        setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7]);
 
         char rxip[20];
         strcpy(rxip, inet_ntoa(rxsock->sin_addr));
@@ -335,6 +372,11 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     if (type == 16)
     {
         // Byte 1 contains the resampler ratio for TX and RX modem
+        if (pdata[1] >= 8)
+        {
+            printf("wrong speedmode %d, ignoring\n", pdata[1]);
+            return;
+        }
         speedmode = pdata[1];
         printf("set speedmode to %d\n", speedmode);
         restart_modems = 1;
@@ -394,6 +436,42 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         return;
     }
 
+    if (type == 23)
+    {
+        // set playback volume (in % 0..100)
+        setVolume_voice(0, minfo);
+        return;
+    }
+
+    if (type == 24)
+    {
+        // set capture volume (in % 0..100)
+        setVolume_voice(1, minfo);
+        return;
+    }
+
+    if (type == 25)
+    {
+        //printf("%d %d %d %d %d\n", pdata[0], pdata[1], pdata[2], pdata[3], pdata[4]);
+        LSDeviceNo = pdata[1];
+        MicDeviceNo = pdata[2];
+        VoiceAudioMode = pdata[3];
+        codec = pdata[4];
+
+        // init voice audio
+        init_voice_result = init_audio_voice(LSDeviceNo, MicDeviceNo);
+        init_voiceproc();
+
+        return;
+    }
+
+    if (type == 26)
+    {
+        // GUI requests termination of this hsmodem
+        printf("shut down hsmodem\n");
+        closeAllandTerminate();
+    }
+
     if (len != (PAYLOADLEN + 2))
     {
         printf("data from app: wrong length:%d (should be %d)\n", len - 2, PAYLOADLEN);
@@ -451,12 +529,21 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     uint8_t* pl = unpack_data(pdata, len);
     if (pl != NULL)
     {
-        // complete frame received
-        // send payload to app
-        uint8_t txpl[PAYLOADLEN + 10 + 1];
-        memcpy(txpl + 1, pl, PAYLOADLEN + 10);
-        txpl[0] = 1;    // type 1: payload data follows
-        sendUDP(appIP, UdpDataPort_ModemToApp, txpl, PAYLOADLEN + 10 + 1);
+        if (VoiceAudioMode != VOICEMODE_DV_FULLDUPLEX)
+        {
+            // complete frame received
+            // send payload to app
+            uint8_t txpl[PAYLOADLEN + 10 + 1];
+            memcpy(txpl + 1, pl, PAYLOADLEN + 10);
+            txpl[0] = 1;    // type 1: payload data follows
+            sendUDP(appIP, UdpDataPort_ModemToApp, txpl, PAYLOADLEN + 10 + 1);
+        }
+        else
+        {
+            // send to Codec decoder
+            if (*(pl + 3) != 0) // minfo=0 ... just a filler, ignore
+                toCodecDecoder(pl + 10, PAYLOADLEN);
+        }
         fnd = 0;
     }
     else
@@ -464,7 +551,7 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // no frame found
         // if longer ws seconds nothing found, reset liquid RX modem
         // comes here with symbol rate, i.e. 4000 S/s
-        int ws = 4;
+        int ws = 4; 
         int wt = sr[speedmode].audio / sr[speedmode].tx;
         if (++fnd >= (wt * ws))
         {
