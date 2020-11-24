@@ -30,6 +30,7 @@ using System.IO;
 using System.Drawing.Drawing2D;
 using System.Diagnostics;
 using System.Threading;
+using oscardata.Properties;
 
 namespace oscardata
 {
@@ -55,11 +56,7 @@ namespace oscardata
             OperatingSystem osversion = System.Environment.OSVersion;
             statics.OSversion = osversion.Platform.ToString();
             if (osversion.VersionString.Contains("indow"))
-            {
                 statics.ostype = 0;
-                tb_shutdown.Visible = false;
-                bt_shutdown.Visible = false;
-            }
             else
                 statics.ostype = 1; // Linux
 
@@ -92,8 +89,6 @@ namespace oscardata
             timer_udpTX.Enabled = true;
             timer_udprx.Enabled = true;
             timer_searchmodem.Enabled = true;
-
-            //pictureBox_rximage.BackgroundImage = Image.FromFile("/tmp/temp293.jpg");
         }
 
         // TX timer
@@ -509,14 +504,19 @@ namespace oscardata
 
             panel_txspectrum.Invalidate();
 
+            // show RX and TX Buffer Usage
             if (statics.PBfifousage < progressBar_fifo.Minimum)         progressBar_fifo.Value = progressBar_fifo.Minimum;
             else if (statics.PBfifousage >= progressBar_fifo.Maximum)   progressBar_fifo.Value = progressBar_fifo.Maximum-1;
             else                                                        progressBar_fifo.Value = statics.PBfifousage;
 
-            progressBar_capfifo.Invalidate();
             if (statics.CAPfifousage < progressBar_capfifo.Minimum) progressBar_capfifo.Value = progressBar_capfifo.Minimum;
             else if (statics.CAPfifousage >= progressBar_capfifo.Maximum) progressBar_capfifo.Value = progressBar_capfifo.Maximum - 1;
             else progressBar_capfifo.Value = statics.CAPfifousage;
+            if (statics.CAPfifousage > 50) progressBar_capfifo.ForeColor = Color.Red; else progressBar_capfifo.ForeColor = Color.Green;
+
+            // Show RX Status LEDs
+            if (statics.RXlevelDetected == 1) pb_rxsignal.BackgroundImage = Resources.greenmarker; else pb_rxsignal.BackgroundImage = Resources.redmarker;
+            if (statics.RXinSync == 1 && statics.RXlevelDetected == 1) pb_rxsync.BackgroundImage = Resources.greenmarker; else pb_rxsync.BackgroundImage = Resources.redmarker;
         }
 
         private void panel_constel_Paint(object sender, PaintEventArgs e)
@@ -721,10 +721,10 @@ namespace oscardata
 
             // random filename for picturebox control (picturebox cannot reload image from actual filename)
             try {
-                //File.Delete(TXimagefilename); 
+                //statics.FileDelete(TXimagefilename); 
                 // delete also older unused files
                 foreach (string f in Directory.EnumerateFiles(statics.addTmpPath(""), "tempTX*.jpg"))
-                    File.Delete(f);
+                    statics.FileDelete(f);
             } catch { }
             Random randNum = new Random();
             TXimagefilename = statics.addTmpPath("tempTX" + randNum.Next(0, 65000).ToString() + ".jpg");
@@ -1028,6 +1028,12 @@ namespace oscardata
             label_capfifo.Location = new Point(label_fifo.Location.X, label_fifo.Location.Y + y);
             progressBar_capfifo.Location = new Point(progressBar_fifo.Location.X, progressBar_fifo.Location.Y + y);
             progressBar_capfifo.Size = new Size(progressBar_capfifo.Width, 18);
+
+            lb_rxsignal.Location = new Point(progressBar_capfifo.Location.X + progressBar_capfifo.Size.Width + 15, label_capfifo.Location.Y);
+            pb_rxsignal.Location = new Point(lb_rxsignal.Location.X + lb_rxsignal.Size.Width + 2, label_capfifo.Location.Y-5);
+
+            lb_rxsync.Location = new Point(pb_rxsignal.Location.X + pb_rxsignal.Size.Width + 15, label_capfifo.Location.Y);
+            pb_rxsync.Location = new Point(lb_rxsync.Location.X + lb_rxsync.Size.Width + 2, label_capfifo.Location.Y-5);
         }
 
         public String GetMyBroadcastIP()
@@ -1114,7 +1120,7 @@ namespace oscardata
         private void bt_file_send_Click(object sender, EventArgs e)
         {
             rtb_RXfile.Text = "";
-            File.Delete(statics.zip_RXtempfilename);
+            statics.FileDelete(statics.zip_RXtempfilename);
 
             Byte[] textarr = File.ReadAllBytes(statics.zip_TXtempfilename);
             ArraySend.Send(textarr, (Byte)txcommand, TXfilename, TXRealFilename);
@@ -1244,11 +1250,15 @@ namespace oscardata
 
         private String ReadString(StreamReader sr)
         {
-            String s = sr.ReadLine();
-            if (s != null)
+            try
             {
-                return s;
+                String s = sr.ReadLine();
+                if (s != null)
+                {
+                    return s;
+                }
             }
+            catch { }
             return " ";
         }
 
@@ -1280,7 +1290,7 @@ namespace oscardata
                     String s = ReadString(sr);
                     cb_stampcall.Checked = (s == "1");
                     s = ReadString(sr);
-                    cb_savegoodfiles.Checked = (s == "1");
+                    // free for other usage 
                     cb_audioPB.Text = ReadString(sr);
                     cb_audioCAP.Text = ReadString(sr);
                     tb_PBvol.Value = ReadInt(sr);
@@ -1323,7 +1333,7 @@ namespace oscardata
                     sw.WriteLine(tb_callsign.Text);
                     sw.WriteLine(cb_speed.Text);
                     sw.WriteLine(cb_stampcall.Checked?"1":"0");
-                    sw.WriteLine(cb_savegoodfiles.Checked ? "1" : "0");
+                    sw.WriteLine("0"); // free for other use
                     sw.WriteLine(cb_audioPB.Text);
                     sw.WriteLine(cb_audioCAP.Text);
                     sw.WriteLine(tb_PBvol.Value.ToString());

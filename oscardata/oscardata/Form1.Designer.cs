@@ -104,7 +104,6 @@
             this.tb_callsign = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cb_stampcall = new System.Windows.Forms.CheckBox();
-            this.cb_savegoodfiles = new System.Windows.Forms.CheckBox();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.cb_speed = new System.Windows.Forms.ComboBox();
@@ -113,6 +112,12 @@
             this.progressBar_fifo = new System.Windows.Forms.ProgressBar();
             this.label_fifo = new System.Windows.Forms.Label();
             this.bt_blockinfo = new System.Windows.Forms.Button();
+            this.progressBar_capfifo = new System.Windows.Forms.ProgressBar();
+            this.label_capfifo = new System.Windows.Forms.Label();
+            this.lb_rxsignal = new System.Windows.Forms.Label();
+            this.lb_rxsync = new System.Windows.Forms.Label();
+            this.pb_rxsync = new System.Windows.Forms.PictureBox();
+            this.pb_rxsignal = new System.Windows.Forms.PictureBox();
             this.bt_rximages = new System.Windows.Forms.Button();
             this.button_loadimage = new System.Windows.Forms.Button();
             this.button_cancelimg = new System.Windows.Forms.Button();
@@ -134,8 +139,6 @@
             this.button_startBERtest = new System.Windows.Forms.Button();
             this.pb_audioCAPstatus = new System.Windows.Forms.PictureBox();
             this.pb_audioPBstatus = new System.Windows.Forms.PictureBox();
-            this.progressBar_capfifo = new System.Windows.Forms.ProgressBar();
-            this.label_capfifo = new System.Windows.Forms.Label();
             this.statusStrip1.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -155,6 +158,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.tb_PBvol)).BeginInit();
             this.groupBox2.SuspendLayout();
             this.tabPage4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_rxsync)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_rxsignal)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_rximage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_tximage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -882,7 +887,6 @@
             this.groupBox2.Controls.Add(this.tb_callsign);
             this.groupBox2.Controls.Add(this.label1);
             this.groupBox2.Controls.Add(this.cb_stampcall);
-            this.groupBox2.Controls.Add(this.cb_savegoodfiles);
             this.groupBox2.Location = new System.Drawing.Point(12, 13);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(674, 126);
@@ -1005,18 +1009,6 @@
             this.cb_stampcall.Text = "Insert Callsign into picture";
             this.cb_stampcall.UseVisualStyleBackColor = true;
             // 
-            // cb_savegoodfiles
-            // 
-            this.cb_savegoodfiles.AutoSize = true;
-            this.cb_savegoodfiles.Checked = true;
-            this.cb_savegoodfiles.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cb_savegoodfiles.Location = new System.Drawing.Point(71, 102);
-            this.cb_savegoodfiles.Name = "cb_savegoodfiles";
-            this.cb_savegoodfiles.Size = new System.Drawing.Size(159, 17);
-            this.cb_savegoodfiles.TabIndex = 3;
-            this.cb_savegoodfiles.Text = "Save good files/images only";
-            this.cb_savegoodfiles.UseVisualStyleBackColor = true;
-            // 
             // tabPage4
             // 
             this.tabPage4.Controls.Add(this.richTextBox1);
@@ -1099,6 +1091,61 @@
             this.bt_blockinfo.Text = "Block Info";
             this.bt_blockinfo.UseVisualStyleBackColor = true;
             this.bt_blockinfo.Click += new System.EventHandler(this.bt_blockinfo_Click);
+            // 
+            // progressBar_capfifo
+            // 
+            this.progressBar_capfifo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(128)))));
+            this.progressBar_capfifo.Location = new System.Drawing.Point(658, 642);
+            this.progressBar_capfifo.Name = "progressBar_capfifo";
+            this.progressBar_capfifo.Size = new System.Drawing.Size(304, 18);
+            this.progressBar_capfifo.Step = 1;
+            this.progressBar_capfifo.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.progressBar_capfifo.TabIndex = 15;
+            // 
+            // label_capfifo
+            // 
+            this.label_capfifo.AutoSize = true;
+            this.label_capfifo.Location = new System.Drawing.Point(567, 643);
+            this.label_capfifo.Name = "label_capfifo";
+            this.label_capfifo.Size = new System.Drawing.Size(56, 13);
+            this.label_capfifo.TabIndex = 16;
+            this.label_capfifo.Text = "RX Buffer:";
+            // 
+            // lb_rxsignal
+            // 
+            this.lb_rxsignal.AutoSize = true;
+            this.lb_rxsignal.Location = new System.Drawing.Point(984, 643);
+            this.lb_rxsignal.Name = "lb_rxsignal";
+            this.lb_rxsignal.Size = new System.Drawing.Size(57, 13);
+            this.lb_rxsignal.TabIndex = 18;
+            this.lb_rxsignal.Text = "RX Signal:";
+            // 
+            // lb_rxsync
+            // 
+            this.lb_rxsync.AutoSize = true;
+            this.lb_rxsync.Location = new System.Drawing.Point(1094, 643);
+            this.lb_rxsync.Name = "lb_rxsync";
+            this.lb_rxsync.Size = new System.Drawing.Size(52, 13);
+            this.lb_rxsync.TabIndex = 20;
+            this.lb_rxsync.Text = "RX Sync:";
+            // 
+            // pb_rxsync
+            // 
+            this.pb_rxsync.BackgroundImage = global::oscardata.Properties.Resources.redmarker;
+            this.pb_rxsync.Location = new System.Drawing.Point(1155, 636);
+            this.pb_rxsync.Name = "pb_rxsync";
+            this.pb_rxsync.Size = new System.Drawing.Size(24, 24);
+            this.pb_rxsync.TabIndex = 19;
+            this.pb_rxsync.TabStop = false;
+            // 
+            // pb_rxsignal
+            // 
+            this.pb_rxsignal.BackgroundImage = global::oscardata.Properties.Resources.redmarker;
+            this.pb_rxsignal.Location = new System.Drawing.Point(1047, 636);
+            this.pb_rxsignal.Name = "pb_rxsignal";
+            this.pb_rxsignal.Size = new System.Drawing.Size(24, 24);
+            this.pb_rxsignal.TabIndex = 17;
+            this.pb_rxsignal.TabStop = false;
             // 
             // bt_rximages
             // 
@@ -1354,30 +1401,15 @@
             this.pb_audioPBstatus.TabIndex = 17;
             this.pb_audioPBstatus.TabStop = false;
             // 
-            // progressBar_capfifo
-            // 
-            this.progressBar_capfifo.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(192)))), ((int)(((byte)(128)))));
-            this.progressBar_capfifo.Location = new System.Drawing.Point(658, 642);
-            this.progressBar_capfifo.Name = "progressBar_capfifo";
-            this.progressBar_capfifo.Size = new System.Drawing.Size(304, 18);
-            this.progressBar_capfifo.Step = 1;
-            this.progressBar_capfifo.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
-            this.progressBar_capfifo.TabIndex = 15;
-            // 
-            // label_capfifo
-            // 
-            this.label_capfifo.AutoSize = true;
-            this.label_capfifo.Location = new System.Drawing.Point(567, 643);
-            this.label_capfifo.Name = "label_capfifo";
-            this.label_capfifo.Size = new System.Drawing.Size(56, 13);
-            this.label_capfifo.TabIndex = 16;
-            this.label_capfifo.Text = "RX Buffer:";
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1293, 691);
+            this.Controls.Add(this.lb_rxsync);
+            this.Controls.Add(this.pb_rxsync);
+            this.Controls.Add(this.lb_rxsignal);
+            this.Controls.Add(this.pb_rxsignal);
             this.Controls.Add(this.label_capfifo);
             this.Controls.Add(this.progressBar_capfifo);
             this.Controls.Add(this.bt_blockinfo);
@@ -1423,6 +1455,8 @@
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             this.tabPage4.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.pb_rxsync)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pb_rxsignal)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_rximage)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_tximage)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
@@ -1486,7 +1520,6 @@
         private System.Windows.Forms.TextBox tb_callsign;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox cb_stampcall;
-        private System.Windows.Forms.CheckBox cb_savegoodfiles;
         private System.Windows.Forms.TextBox tb_shutdown;
         private System.Windows.Forms.Button bt_shutdown;
         private System.Windows.Forms.Button bt_resetmodem;
@@ -1545,6 +1578,10 @@
         private System.Windows.Forms.PictureBox pb_voice;
         private System.Windows.Forms.ProgressBar progressBar_capfifo;
         private System.Windows.Forms.Label label_capfifo;
+        private System.Windows.Forms.PictureBox pb_rxsignal;
+        private System.Windows.Forms.Label lb_rxsignal;
+        private System.Windows.Forms.Label lb_rxsync;
+        private System.Windows.Forms.PictureBox pb_rxsync;
     }
 }
 

@@ -111,13 +111,6 @@
   <ItemGroup>
     <None Include="Properties\image.jpg" />
     <None Include="Properties\image1.jpg" />
-    <None Include="Properties\image2.jpg" />
-    <None Include="Properties\App-voice-support-headset-icon.png" />
-    <None Include="Properties\Categories-preferences-system-icon.png" />
-    <None Include="Properties\Downloads-1-icon.png" />
-    <None Include="Properties\Mimetypes-text-csv-icon.png" />
-    <None Include="Properties\Photography-icon.png" />
-    <None Include="Properties\Mimetypes-text-html-icon.png" />
     <None Include="Properties\binary.png" />
     <None Include="Properties\cancel.png" />
     <None Include="Properties\html.png" />
@@ -144,6 +137,8 @@
     <None Include="Properties\cdc_intloop.png" />
     <None Include="Properties\textrx.png" />
     <None Include="Properties\texttx.png" />
+    <None Include="Properties\greenmarker.png" />
+    <None Include="Properties\redmarker.png" />
     <Content Include="Satellite-icon.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

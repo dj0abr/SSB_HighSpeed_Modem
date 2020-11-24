@@ -153,6 +153,16 @@ namespace oscardata.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap greenmarker {
+            get {
+                object obj = ResourceManager.GetObject("greenmarker", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap html {
             get {
                 object obj = ResourceManager.GetObject("html", resourceCulture);
@@ -226,6 +236,16 @@ namespace oscardata.Properties {
         internal static System.Drawing.Bitmap openfolder {
             get {
                 object obj = ResourceManager.GetObject("openfolder", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Ressource vom Typ System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap redmarker {
+            get {
+                object obj = ResourceManager.GetObject("redmarker", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

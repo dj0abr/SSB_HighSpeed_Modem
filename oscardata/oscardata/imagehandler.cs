@@ -18,7 +18,7 @@ namespace oscardata
                 encoder_params.Param[0] = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, compression);
 
                 ImageCodecInfo image_codec_info = GetEncoderInfo("image/jpeg");
-                File.Delete(file_name);
+                statics.FileDelete(file_name);
                 image.Save(file_name, image_codec_info, encoder_params);
             }
             catch (Exception ex)

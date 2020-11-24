@@ -198,6 +198,7 @@ void modulator(uint8_t sym_in)
         while(1)
         {
             fs = pb_fifo_freespace(0);
+            // wait until there is space in fifo
             if(fs) break;
             sleep_ms(10);
         }
@@ -287,6 +288,9 @@ void make_FFTdata(float f)
         if (us > 255) us = 255;
         txpl[bidx++] = us;    // usage of TX fifo
 
+        txpl[bidx++] = rxlevel_deteced; // RX level present
+        txpl[bidx++] = rx_in_sync;
+
         for (int i = 0; i < fftlen; i++)
         {
             txpl[bidx++] = fft[i] >> 8;
@@ -339,9 +343,7 @@ static int ccol_idx = 0;
        
 
     // input volume
-#ifdef _WIN32_
     f *= softwareCAPvolume;
-#endif
 
     getMax(f);
 
@@ -393,7 +395,7 @@ static int ccol_idx = 0;
         // we have about 2000 S/s, but this many points would make the GUI slow
         // so we send only every x
         static int ev = 0;
-        if (++ev >= 2)
+        if (++ev >= 10)
         {
             ev = 0;
             uint32_t re = (uint32_t)(syms.real * 16777216.0);

@@ -39,8 +39,11 @@ fftw_plan plan = NULL;
 int fftidx = 0;
 int fftcnt = fft_rate/2+1;      // number of output values
 uint16_t fftout[FFT_AUDIOSAMPLERATE / 10/2+1];
+float f_fftout[FFT_AUDIOSAMPLERATE / 10 / 2 + 1];
 int downsamp = 0;
 int downphase = 0;
+int rxlevel_deteced = 0;
+int rx_in_sync = 0;
 
 uint16_t *make_waterfall(float fre, int *retlen)
 {
@@ -50,9 +53,8 @@ uint16_t *make_waterfall(float fre, int *retlen)
     // caprate 44,1k: downsample by 5,5
 
     if (caprate == 48000)
-    {
         if (++downsamp < 6) return NULL;
-    }
+
     if (caprate == 44100)
     {
         if (downphase <= 1100)
@@ -76,7 +78,7 @@ uint16_t *make_waterfall(float fre, int *retlen)
     if(fftidx == fft_rate)
     {
         fftidx = 0;
-            
+
         // the fft buffer is full, execute the FFT 
         fftw_execute(plan);
             
@@ -88,8 +90,48 @@ uint16_t *make_waterfall(float fre, int *retlen)
             float mag = sqrt((fre * fre) + (fim * fim));
 
             fftout[j] = (uint16_t)mag;
+            f_fftout[j] = mag;
                 
             fftrdy = 1;
+        }
+
+        // signal detection
+        // measure level at band edges
+        float edgelevel = 0;
+        for (int e = 0; e < 10; e++)
+            edgelevel += f_fftout[e];
+        for (int e = 390; e < fftcnt; e++)
+            edgelevel += f_fftout[e];
+        edgelevel /= 20;
+
+        // measure level at mid band
+        float midlevel = 0;
+        for (int e = 100; e < 300; e++)
+            midlevel += f_fftout[e];
+        midlevel /= 20;
+
+        //calc difference in %
+        int idiff = (int)((edgelevel * 100) / midlevel);
+        //printf("diff:%d %%  edge:%10.6f midband:%10.6f\n", ldiff, idiff,edgelevel, midlevel);
+
+        // IC9700 ... noise makes about 5% idiff
+        // Signal makes 0-2%, so we take the decision at 3%
+        const int maxchecks = 3;
+        static int rxstat = 0;
+        if (idiff < 3)
+        {
+            if (rxstat == maxchecks)
+            {
+                printf("===>>> level detected, reset modem\n");
+                trigger_resetmodem = 1;
+                rxlevel_deteced = 1;
+            }
+            if(rxstat <= maxchecks) rxstat++;
+        }
+        else
+        {
+            rxstat = 0;
+            rxlevel_deteced = 0;
         }
     }
     

@@ -74,6 +74,8 @@ namespace oscardata
         public static int CAPfifousage = 0;
         public static int initAudioStatus;
         public static int initVoiceStatus;
+        public static int RXlevelDetected = 0;
+        public static int RXinSync = 0;
 
 
         public static String[] getOwnIPs()
@@ -398,6 +400,15 @@ namespace oscardata
                 }
                 catch { }
             }
+        }
+
+        public static void FileDelete(String fn)
+        {
+            try
+            {
+                File.Delete(fn);
+            }
+            catch { }
         }
     }
 }

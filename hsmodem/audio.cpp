@@ -49,6 +49,8 @@ HSTREAM stream = 0;
 int openpbdev = -1;
 int opencapdev = -1;
 
+float softwareCAPvolume = 0.5;
+
 void showDeviceInfo(BASS_DEVICEINFO info)
 {
     printf("Name:%s driver:%s flags:%d:", info.name, info.driver,info.flags);
@@ -377,16 +379,28 @@ int ret = 0;
 }
 
 #ifdef _LINUX_
-void selectPBdevice()
+int selectPBdevice()
 {
     if (!BASS_SetDevice(openpbdev))
+    {
         printf("BASS_SetDevice: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+    }
+    else
+        return 1;
+
+    return 0;
 }
 
-void selectCAPdevice()
+int selectCAPdevice()
 {
     if (!BASS_SetDevice(opencapdev))
-        printf("BASS_SetDevice: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+    {
+        //printf("BASS_SetDevice: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+    }
+    else
+        return 1;
+
+    return 0;
 }
 
 void close_audio()
@@ -416,9 +430,9 @@ void setPBvolume(int v)
 
     //printf("set PB volume to:%d / %f [0..1]\n", v, vf );
 
-    selectPBdevice();
-    if (!BASS_SetVolume(vf))
-        printf("setPBvolume: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
+    if(selectPBdevice())
+        if (!BASS_SetVolume(vf))
+            printf("setPBvolume: %d err:%d\n", openpbdev, BASS_ErrorGetCode());
 }
 
 void setCAPvolume(int v)
@@ -430,9 +444,18 @@ void setCAPvolume(int v)
 
     //printf("set CAP volume to:%d / %f [0..1]\n", v, vf);
 
-    selectCAPdevice();
-    if (!BASS_RecordSetInput(-1,BASS_INPUT_ON,vf))
-        printf("setCAPvolume: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+    if (selectCAPdevice())
+    {
+        if (!BASS_RecordSetInput(-1, BASS_INPUT_ON, vf))
+            printf("setCAPvolume: %d err:%d\n", opencapdev, BASS_ErrorGetCode());
+        else
+            softwareCAPvolume = 1;
+    }
+    else
+    {
+        softwareCAPvolume = (float)v;
+        softwareCAPvolume /= 50;
+    }
 }
 
 // capture callback
@@ -588,7 +611,6 @@ int cap_fifo_usedPercent()
     int fs = cap_fifo_freespace();
     int used = AUDIO_CAPTURE_BUFLEN - fs;
     used = (used * 100) / AUDIO_CAPTURE_BUFLEN;
-    if (used < 5) printf("used:%d\n", used);
     return used;
 }
 

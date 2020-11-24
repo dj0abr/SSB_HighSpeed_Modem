@@ -102,7 +102,7 @@ namespace oscardata
                 if (!StartFileRX()) return false;   // invalid file
             }
 
-            if (minfo != statics.FirstFrame)
+            if (receiving && minfo != statics.FirstFrame)
                 runtime = DateTime.UtcNow - starttime;
 
             // receive continous frames of a transmission
@@ -403,29 +403,35 @@ namespace oscardata
 
             // reception was ok, blockfile no more needed, delete it
             // file is OK, blockfile no more needed, delete it
-            try { File.Delete(blockFilename); } catch { }
+            try { statics.FileDelete(blockFilename); } catch { }
 
             // make filename
             filename = makeRXfilename();
 
             Console.WriteLine("save at " + filename);
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Create)))
+            try
             {
-                for (int i = 0; i <= blockidx; i++)
+                using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Create)))
                 {
-                    if (i == 0)
-                        writer.Write(firstblock);
-                    else
+                    for (int i = 0; i <= blockidx; i++)
                     {
-                        Byte[] blk = new byte[statics.PayloadLen];
-                        for (int j = 0; j < statics.PayloadLen; j++)
-                            blk[j] = blockbuf[i, j];
+                        if (i == 0)
+                            writer.Write(firstblock);
+                        else
+                        {
+                            Byte[] blk = new byte[statics.PayloadLen];
+                            for (int j = 0; j < statics.PayloadLen; j++)
+                                blk[j] = blockbuf[i, j];
 
-                        writer.Write(blk);
+                            writer.Write(blk);
+                        }
                     }
+                    writer.Close();
                 }
-                writer.Close();
+            }
+            catch
+            {
             }
 
             return true;
@@ -501,7 +507,7 @@ namespace oscardata
                     fdest = statics.getHomePath("", fdest);
                     // fdest is the file in the oscardata's user home directoty
                     // remove old file with same name
-                    try { File.Delete(fdest); } catch { }
+                    try { statics.FileDelete(fdest); } catch { }
                     // move the unzipped file to the final location
                     File.Move(fl, fdest);
                     filesize = statics.GetFileSize(fdest);
@@ -510,7 +516,7 @@ namespace oscardata
                 else
                     StatusText = "unzip failed";
 
-                File.Delete(statics.zip_RXtempfilename);
+                statics.FileDelete(statics.zip_RXtempfilename);
             }
             catch
             {

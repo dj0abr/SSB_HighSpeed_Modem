@@ -44,10 +44,6 @@ float maxCAPvol = 99;
 extern int openpbdev;
 extern int opencapdev;
 
-float softwareCAPvolume = 0.5;
-
-
-
 int init_wasapi(int pbdev, int capdev)
 {
     int ret = 0;

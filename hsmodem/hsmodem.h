@@ -215,7 +215,9 @@ extern int init_voice_result;
 extern int initialLSvol;
 extern int initialMICvol;
 extern int codec;
-
+extern int trigger_resetmodem;
+extern int rxlevel_deteced;
+extern int rx_in_sync;
 
 // audio device description table
 typedef struct {

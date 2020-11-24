@@ -28,6 +28,9 @@
 * it can be compiled under Linux: make
 * and under Windows: Visual-Studio
 * 
+* !!! compile x86 (32bit) version !!! all supplied dlls are 32 bit !!!
+* ====================================================================
+* 
 * 3rd party libraries:
 * 1) BASS Audio from https://www.un4seen.com/
 	copy bass.h and bass.lib into source directory
@@ -92,6 +95,7 @@ char ownfilename[] = { "hsmodem" };
 char appIP[20] = { 0 };
 int fixappIP = 0;
 int restart_modems = 0;
+int trigger_resetmodem = 0;
 
 int caprate = 44100;
 int txinterpolfactor = 20;
@@ -239,11 +243,12 @@ int main(int argc, char* argv[])
         }
 
         int dret = demodulator();
-
-#ifdef _LINUX_
-        if(dret == 0)
-            usleep(1);
-#endif
+        if (dret == 0)
+        {
+            // no new data in fifo
+            // not important how long to sleep, 10ms is fine
+            sleep_ms(10);   
+        }
     }
     printf("stopped: %d\n", keeprunning);
 
@@ -411,8 +416,10 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     if (type == 19)
     {
         // shut down this modem PC
+#ifdef _LINUX_
         int r = system("sudo shutdown now");
         exit(r);
+#endif
     }
 
     if (type == 20)
@@ -545,19 +552,27 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
                 toCodecDecoder(pl + 10, PAYLOADLEN);
         }
         fnd = 0;
+        trigger_resetmodem = 0;
+        rx_in_sync = 1;
     }
     else
     {
         // no frame found
         // if longer ws seconds nothing found, reset liquid RX modem
         // comes here with symbol rate, i.e. 4000 S/s
-        int ws = 4; 
+        int ws = 5; 
         int wt = sr[speedmode].audio / sr[speedmode].tx;
-        if (++fnd >= (wt * ws))
+        if (++fnd >= (wt * ws) || trigger_resetmodem)
         {
             fnd = 0;
+            trigger_resetmodem = 0;
+            rx_in_sync = 0;
             printf("no signal detected %d, reset RX modem\n", wt);
             resetModem();
+        }
+        else if (fnd >= wt)
+        {
+            rx_in_sync = 0;
         }
     }
 }

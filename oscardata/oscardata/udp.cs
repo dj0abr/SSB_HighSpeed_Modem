@@ -122,8 +122,10 @@ namespace oscardata
                         {
                             statics.PBfifousage = b[0];
                             statics.CAPfifousage = b[1];
-                            Byte[] b1 = new byte[b.Length - 2];
-                            Array.Copy(b, 2, b1, 0, b1.Length);
+                            statics.RXlevelDetected = b[2];
+                            statics. RXinSync = b[3];
+                            Byte[] b1 = new byte[b.Length - 4];
+                            Array.Copy(b, 4, b1, 0, b1.Length);
                             uq_fft.Add(b1);
                         }
 

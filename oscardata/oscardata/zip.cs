@@ -51,7 +51,7 @@ namespace oscardata
         {
             try
             {
-                File.Delete(zipfilename);
+                statics.FileDelete(zipfilename);
             }
             catch { }
 

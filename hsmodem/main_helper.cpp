@@ -90,8 +90,18 @@ void closeAllandTerminate()
     // close liquid-SDR
     close_dsp();
     // close network sockets
+#ifdef _LINUX_
     close(BC_sock_AppToModem);
+#endif
+#ifdef _WIN32_
+    closesocket(BC_sock_AppToModem);
+#endif
+#ifdef _LINUX_
     close(DATA_sock_AppToModem);
+#endif
+#ifdef _WIN32_
+    closesocket(DATA_sock_AppToModem);
+#endif
 
     exit(0);
 }
