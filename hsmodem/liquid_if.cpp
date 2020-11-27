@@ -398,8 +398,8 @@ static int ccol_idx = 0;
         if (++ev >= 10)
         {
             ev = 0;
-            uint32_t re = (uint32_t)(syms.real * 16777216.0);
-            uint32_t im = (uint32_t)(syms.imag * 16777216.0);
+            int32_t re = (int32_t)(syms.real * 16777216.0);
+            int32_t im = (int32_t)(syms.imag * 16777216.0);
             uint8_t txpl[13];
             int idx = 0;
             txpl[idx++] = 5;    // type 5: IQ data follows

@@ -31,6 +31,7 @@ using System.Drawing.Drawing2D;
 using System.Diagnostics;
 using System.Threading;
 using oscardata.Properties;
+using System.Reflection;
 
 namespace oscardata
 {
@@ -51,6 +52,28 @@ namespace oscardata
         {
             // init GUI
             InitializeComponent();
+
+            // needed for ARM mono, which cannot load a picbox directly from file
+            var bmp = new Bitmap(Resources.image);
+            pictureBox_rximage.BackgroundImage = bmp;
+
+            bmp = new Bitmap(Resources.image1);
+            pictureBox_tximage.BackgroundImage = bmp;
+
+            // if this program was started from another loacation
+            // set the working directory to the path of the .exe file
+            // so it can find hsmodem(.exe)
+            try
+            {
+                String s = Assembly.GetExecutingAssembly().Location;
+                s = Path.GetDirectoryName(s);
+                Directory.SetCurrentDirectory(s);
+                Console.WriteLine("working path: " + s);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("cannot set working path: " + e.ToString());
+            }
 
             // test OS type
             OperatingSystem osversion = System.Environment.OSVersion;
@@ -755,7 +778,8 @@ namespace oscardata
                 ih.SaveJpgAtFileSize(img, TXimagefilename, max_size);
             }
 
-            pictureBox_tximage.Load(TXimagefilename);
+            //pictureBox_tximage.Load(TXimagefilename); this does not work under ARM mono
+            pictureBox_tximage.BackgroundImage = Image.FromFile(TXimagefilename);
             TXRealFileSize = statics.GetFileSize(TXimagefilename);
             ShowTXstatus();
             txcommand = statics.Image;
@@ -1317,7 +1341,7 @@ namespace oscardata
             catch
             {
                 tb_callsign.Text = "";
-                cb_speed.Text = "4000 QPSK BW: 2400 Hz (default QO-100)";
+                cb_autostart.Checked = true;
             }
 
             if (cb_audioPB.Text.Length <= 1) cb_audioPB.Text = "Default";

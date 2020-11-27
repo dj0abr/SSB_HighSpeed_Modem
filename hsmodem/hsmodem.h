@@ -30,7 +30,6 @@
 #include <Tlhelp32.h>
 #include <winbase.h>
 #include <Shlobj.h>
-#include "opus.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -55,12 +54,11 @@
 #include <arpa/inet.h>
 #include <pwd.h>
 #include <math.h>
-#include <opus/opus.h>
 #endif
 
+#include "opus.h"
 #include "bass.h"
 #include "basswasapi.h"
-#include "bassflac.h"
 #include "liquid.h"
 #include "frameformat.h"
 #include "fec.h"

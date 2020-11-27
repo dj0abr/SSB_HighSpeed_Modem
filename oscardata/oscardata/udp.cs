@@ -141,29 +141,10 @@ namespace oscardata
                                 lastb[0] = b[i];
 
                                 // test if aligned
-                                int re = 0, im = 0;
-                                if (lastb[0] == 0 && lastb[1] == 0 && lastb[2] == 3 && lastb[3] == 0xe8)
+                                Int32 re = 0, im = 0;
+                                if (lastb[0] == 0xe8 && lastb[1] == 3 && lastb[2] == 0 && lastb[3] == 0)
                                 {
-                                    // we are aligned to a re value
-                                    re = lastb[4];
-                                    re <<= 8;
-                                    re += lastb[5];
-                                    re <<= 8;
-                                    re += lastb[6];
-                                    re <<= 8;
-                                    re += lastb[7];
-
-                                    im = lastb[8];
-                                    im <<= 8;
-                                    im += lastb[9];
-                                    im <<= 8;
-                                    im += lastb[10];
-                                    im <<= 8;
-                                    im += lastb[11];
-                                }
-                                else if (lastb[0] == 0xe8 && lastb[1] == 3 && lastb[2] == 0 && lastb[3] == 0)
-                                {
-                                    // we are aligned to a re value
+                                    // we are aligned
                                     re = lastb[7];
                                     re <<= 8;
                                     re += lastb[6];
@@ -194,7 +175,7 @@ namespace oscardata
         static int maxdrawanz = 160;
         static int drawanz = 0;
         static Bitmap bm;
-        static void drawBitmap(int re, int im)
+        static void drawBitmap(Int32 re, Int32 im)
         {
             if (re == 0 && im == 0) return;
             if (++drawanz >= maxdrawanz && uq_iq.Count() <= 1)
@@ -260,35 +241,6 @@ namespace oscardata
                 }
                 if (wait) Thread.Sleep(1);
             }
-
-            /*
-            while (statics.running)
-            {
-                autoEvent.WaitOne();
-                try
-                {
-                    while (uq_tx.Count() > 0)
-                    {
-                        // TX data available
-                        Byte[] b = uq_tx.Getarr();
-                        udpc.Send(b, b.Length, statics.ModemIP, statics.UdpTXport);
-                        if (b[0] < 16) break; // continue without pause for internal control messages, or break for TX messages
-                    }
-                }
-                catch (Exception e)
-                {
-                    String err = e.ToString();
-                }
-
-                // do not wait in case of internal messages
-                if (statics.getDatarate() != actdatarate)
-                {
-                    // rate has been changed, reset the timer
-                    wait_datarate = (int)(((double)statics.UdpBlocklen * 8.0 * 1000.0 / (double)(statics.getDatarate())));
-                    TTimer.Change(0, wait_datarate);
-                    actdatarate = statics.getDatarate();
-                }
-            }*/
         }
 
         public static void UdpBCsend(Byte[] b, String ip, int port)

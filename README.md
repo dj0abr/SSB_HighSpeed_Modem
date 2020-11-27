@@ -29,6 +29,12 @@ this software uses these programs:
 * fftw3: http://www.fftw.org (GPL V.2 or later)
 * libcodec2 (Linux: standard lib, Windows: from freeDV)
 
+# Download alternatives
+* download from github and build from source
+* download windows installer and download Odroid and Raspberry images:
+https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm 
+
+
 # building the software
 * Linux
 1. go into the folder "hsmodem"

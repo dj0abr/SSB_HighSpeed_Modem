@@ -1,0 +1,22 @@
+﻿  liquid_if.cpp
+  hsmodem.cpp
+  fft.cpp
+  audio_wasapi.cpp
+  audio.cpp
+  Code wird generiert...
+  Kompilieren...
+  voiceprocessor.cpp
+  udp.cpp
+  symboltracker.cpp
+  speed.cpp
+  scrambler.cpp
+  main_helper.cpp
+  frame_packer.cpp
+  fec.cpp
+  crc16.cpp
+  constellation.cpp
+  codec2.cpp
+  audio_voice_wasapi.cpp
+  audio_voice.cpp
+  Code wird generiert...
+  hsmodem.vcxproj -> E:\funk\hsmodem\Debug\hsmodem.exe
