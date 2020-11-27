@@ -35,14 +35,13 @@ this software uses these programs:
 https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm 
 
 
-# building the software
+# building the software for Linux
 * Linux
-1. go into the folder "hsmodem"
-2. run "make"
-3. the executable is in folder LinuxRelease
-* Windows
-1. load hsmodem.sln in VisualStudio-19 and build Release version.
-2. the executable is in folder WinRelease
+1. Download from github the file hsmodem.sh, ONLY ! Do not clone the repository, download ONLY this single file.
+2. copy hsmodem.hs to your home directory and make it executable (chmod 755 hsmodem.sh)
+3. run the file:  ./hsmodem.sh
+this will make download, compile hsmodem an install all required files
+the resulting project is in ./SSB_HighSpeed_Modem/hsmodemLinux
 
 # starting the modem and application
 
@@ -50,21 +49,12 @@ you need to run 2 programs, the first one is "hsmodem" which runs in a termimal 
 The second program is the user interface "oscardata.exe".
 
 * Windows
-copy all files from "WinRelease" into any folder of your choice. Start oscardata.exe by double-clicking.
-The application oscardata.exe can also run on a different PC in your home network, see Linux version.
-Even a mix between Linux and Windows is possible, so running oscardata.exe on a Windows PC and
-running the hsmodem on another computer in the shack.
+download the installation file from here:
+https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm
 
 * Linux
-1. go into the folder "LinuxRelease"
-2. run the software:  ./hs100modem.exe or ./hsmodem
-optional command line parameter:
-no parameter ... normal usage
--m IP ... specify the V4 IP adress of the device where the application software is running. This is useful if you have more than one qo100modem running simultaneously. Without this parameter the app will search the modem automatically.
-3. start the user application on any PC in your home network. It will find the modem automatically
-The file is located in oscardata/oscardata/bin/Release
-On windows just start oscardata.exe
-On Linux start it with:  mono  oscardata.exe
+1. go into the folder ..../SSB_HighSpeed_Modem/hsmodemLinux
+2. run the software:  mono  oscardata.exe
 
 # tested scenarious
 
