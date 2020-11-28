@@ -47,6 +47,7 @@ the resulting project is in ./SSB_HighSpeed_Modem/hsmodemLinux
 
 you need to run 2 programs, the first one is "hsmodem" which runs in a termimal without GUI. This is the modem doing all modulation and demodulation staff.
 The second program is the user interface "oscardata.exe".
+oscardata.exe starts hsmodem automatically in the background. If you want to run hsmodem on one machine and oscardata on another then deactivate the autostart in the Setup menu in oscardata.exe
 
 * Windows
 download the installation file from here:
