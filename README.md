@@ -37,7 +37,7 @@ https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm
 
 # building the software for Linux
 * Linux
-1. Download from github the file hsmodem.sh, ONLY ! Do not clone the repository, download ONLY this single file.
+1. Download from github the file hsmodem/hsmodem.sh, ONLY ! Do not clone the repository, download ONLY this single file.
 2. copy hsmodem.hs to your home directory and make it executable (chmod 755 hsmodem.sh)
 3. run the file:  ./hsmodem.sh
 this will make download, compile hsmodem an install all required files
