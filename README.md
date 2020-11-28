@@ -32,7 +32,7 @@ this software uses these programs:
 # Download alternatives
 * download from github and build from source
 * download windows installer and download Odroid and Raspberry images:
-https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm 
+https://wx.spdns.de/german/technik/sat/modem/images.htm
 
 
 # building the software for Linux
@@ -50,7 +50,7 @@ The second program is the user interface "oscardata.exe".
 
 * Windows
 download the installation file from here:
-https://www.helitron.de/dj0abr/german/technik/sat/modem/images.htm
+https://wx.spdns.de/german/technik/sat/modem/images.htm
 
 * Linux
 1. go into the folder ..../SSB_HighSpeed_Modem/hsmodemLinux
