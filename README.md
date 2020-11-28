@@ -50,8 +50,9 @@ The second program is the user interface "oscardata.exe".
 oscardata.exe starts hsmodem automatically in the background. If you want to run hsmodem on one machine and oscardata on another then deactivate the autostart in the Setup menu in oscardata.exe
 
 * Windows
-download the installation file from here:
+if the software was installed with this setup file: 
 https://wx.spdns.de/german/technik/sat/modem/images.htm
+then you find the program under the program group "amsat" in the Window's start menu
 
 * Linux
 1. go into the folder ..../SSB_HighSpeed_Modem/hsmodemLinux
