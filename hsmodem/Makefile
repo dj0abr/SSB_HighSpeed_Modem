@@ -7,7 +7,7 @@
 # then (in the target system) run "sudo install". 
 # This will copy the sharded libs to its final location.
 
-CXXFLAGS = -Wall -O3 -std=c++0x -Wno-write-strings -Wno-narrowing
+CXXFLAGS = -g -Wall -O3 -std=c++0x -Wno-write-strings -Wno-narrowing
 LDFLAGS = -lpthread -lrt -lsndfile -lasound -lm -lopus -lfftw3 -lfftw3_threads -lliquid -lcodec2 -lsoundio
 OBJ = hsmodem.o constellation.o crc16.o frame_packer.o main_helper.o scrambler.o speed.o fec.o udp.o fft.o liquid_if.o symboltracker.o voiceprocessor.o codec2.o soundio.o fifo.o announcement.o fifo_voice.o voiceio.o
 
