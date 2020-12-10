@@ -21,11 +21,16 @@ git clone https://github.com/dj0abr/SSB_HighSpeed_Modem
 echo
 echo "Compile the sources and build the executable program. Press ENTER ..."
 read
+pwd
+cd SSB_HighSpeed_Modem/hsmodem
+pwd
 make -j 4
 echo
 echo "copy the shared libraries to it's final location. Press ENTER ..."
 read
-echo
+echo copy oscardata.exe
+pwd
+cp ../oscardata/oscardata/bin/Release/oscardata.exe ../hsmodemLinux
 # now find the shared library directory
 # this is the directory where libopus.so is installed
 LIBNAME=$(find /usr -name libopus.so | head -1)
@@ -36,9 +41,15 @@ echo
 if [ ${ARCHITECTURE} == 'x86_64' ]; 
 then
 sudo cp ./SharedLibs/$ARCHITECTURE/*.so $LIBFOLDER
+echo "finished. Your project is in folder: ./SSB_HighSpeed_Modem/hsmodemLinux"
+echo "you can copy this folder to any location"
+echo "to run hsmodem:  mono  oscardata.exe"
 elif [ ${ARCHITECTURE} == 'aarch64' ]; 
 then
 sudo cp ./SharedLibs/$ARCHITECTURE/*.so $LIBFOLDER
+echo "finished. Your project is in folder: ./SSB_HighSpeed_Modem/hsmodemLinux"
+echo "you can copy this folder to any location"
+echo "to run hsmodem:  mono  oscardata.exe"
 else
     echo ================================================================
     echo error: no shared libs for $ARCHITECTURE . Install them manually.

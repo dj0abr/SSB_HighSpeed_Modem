@@ -39,12 +39,12 @@
             this.panel_constel = new System.Windows.Forms.Panel();
             this.timer_qpsk = new System.Windows.Forms.Timer(this.components);
             this.panel_txspectrum = new System.Windows.Forms.Panel();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage_ber = new System.Windows.Forms.TabPage();
             this.button_stopBERtest = new System.Windows.Forms.Button();
             this.imageList1 = new System.Windows.Forms.ImageList(this.components);
             this.button_startBERtest = new System.Windows.Forms.Button();
             this.rtb = new System.Windows.Forms.RichTextBox();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.tabPage_image = new System.Windows.Forms.TabPage();
             this.groupBox1 = new System.Windows.Forms.Panel();
             this.label_nextimage = new System.Windows.Forms.Label();
             this.cb_loop = new System.Windows.Forms.CheckBox();
@@ -60,7 +60,7 @@
             this.pictureBox_rximage = new System.Windows.Forms.PictureBox();
             this.pictureBox_tximage = new System.Windows.Forms.PictureBox();
             this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage3 = new System.Windows.Forms.TabPage();
+            this.tabPage_file = new System.Windows.Forms.TabPage();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.button2 = new System.Windows.Forms.Button();
             this.bt_openrxfile = new System.Windows.Forms.Button();
@@ -95,13 +95,13 @@
             this.label10 = new System.Windows.Forms.Label();
             this.cb_mic = new System.Windows.Forms.ComboBox();
             this.label11 = new System.Windows.Forms.Label();
-            this.tabPage5 = new System.Windows.Forms.TabPage();
+            this.tabPage_setup = new System.Windows.Forms.TabPage();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
+            this.cb_language = new System.Windows.Forms.ComboBox();
             this.cb_autostart = new System.Windows.Forms.CheckBox();
             this.bt_shutdown = new System.Windows.Forms.Button();
             this.tb_shutdown = new System.Windows.Forms.TextBox();
             this.bt_resetmodem = new System.Windows.Forms.Button();
-            this.textBox2 = new System.Windows.Forms.TextBox();
             this.textBox3 = new System.Windows.Forms.TextBox();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.pb_audioCAPstatus = new System.Windows.Forms.PictureBox();
@@ -125,7 +125,7 @@
             this.tb_callsign = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cb_stampcall = new System.Windows.Forms.CheckBox();
-            this.tabPage4 = new System.Windows.Forms.TabPage();
+            this.tabPage_about = new System.Windows.Forms.TabPage();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.cb_speed = new System.Windows.Forms.ComboBox();
             this.label_speed = new System.Windows.Forms.Label();
@@ -140,13 +140,13 @@
             this.pb_rxsync = new System.Windows.Forms.PictureBox();
             this.pb_rxsignal = new System.Windows.Forms.PictureBox();
             this.statusStrip1.SuspendLayout();
-            this.tabPage1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
+            this.tabPage_ber.SuspendLayout();
+            this.tabPage_image.SuspendLayout();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_rximage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_tximage)).BeginInit();
             this.tabControl1.SuspendLayout();
-            this.tabPage3.SuspendLayout();
+            this.tabPage_file.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.tabPage_audio.SuspendLayout();
             this.groupBox7.SuspendLayout();
@@ -158,7 +158,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pb_voicePBstatus)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_mic)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_loadspeaker)).BeginInit();
-            this.tabPage5.SuspendLayout();
+            this.tabPage_setup.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pb_audioCAPstatus)).BeginInit();
@@ -166,7 +166,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tb_CAPvol)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_PBvol)).BeginInit();
             this.groupBox2.SuspendLayout();
-            this.tabPage4.SuspendLayout();
+            this.tabPage_about.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pb_rxsync)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pb_rxsignal)).BeginInit();
             this.SuspendLayout();
@@ -235,19 +235,19 @@
             this.panel_txspectrum.TabIndex = 6;
             this.panel_txspectrum.Paint += new System.Windows.Forms.PaintEventHandler(this.panel_txspectrum_Paint);
             // 
-            // tabPage1
+            // tabPage_ber
             // 
-            this.tabPage1.Controls.Add(this.button_stopBERtest);
-            this.tabPage1.Controls.Add(this.button_startBERtest);
-            this.tabPage1.Controls.Add(this.rtb);
-            this.tabPage1.ImageIndex = 4;
-            this.tabPage1.Location = new System.Drawing.Point(4, 23);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(1291, 552);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "BER Test";
-            this.tabPage1.UseVisualStyleBackColor = true;
+            this.tabPage_ber.Controls.Add(this.button_stopBERtest);
+            this.tabPage_ber.Controls.Add(this.button_startBERtest);
+            this.tabPage_ber.Controls.Add(this.rtb);
+            this.tabPage_ber.ImageIndex = 4;
+            this.tabPage_ber.Location = new System.Drawing.Point(4, 23);
+            this.tabPage_ber.Name = "tabPage_ber";
+            this.tabPage_ber.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage_ber.Size = new System.Drawing.Size(1291, 552);
+            this.tabPage_ber.TabIndex = 0;
+            this.tabPage_ber.Text = "BER Test";
+            this.tabPage_ber.UseVisualStyleBackColor = true;
             // 
             // button_stopBERtest
             // 
@@ -304,21 +304,21 @@
             this.rtb.TabIndex = 0;
             this.rtb.Text = "";
             // 
-            // tabPage2
+            // tabPage_image
             // 
-            this.tabPage2.Controls.Add(this.groupBox1);
-            this.tabPage2.Controls.Add(this.label_rximage);
-            this.tabPage2.Controls.Add(this.label_tximage);
-            this.tabPage2.Controls.Add(this.pictureBox_rximage);
-            this.tabPage2.Controls.Add(this.pictureBox_tximage);
-            this.tabPage2.ImageIndex = 3;
-            this.tabPage2.Location = new System.Drawing.Point(4, 23);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(1291, 552);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "Image";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            this.tabPage_image.Controls.Add(this.groupBox1);
+            this.tabPage_image.Controls.Add(this.label_rximage);
+            this.tabPage_image.Controls.Add(this.label_tximage);
+            this.tabPage_image.Controls.Add(this.pictureBox_rximage);
+            this.tabPage_image.Controls.Add(this.pictureBox_tximage);
+            this.tabPage_image.ImageIndex = 3;
+            this.tabPage_image.Location = new System.Drawing.Point(4, 23);
+            this.tabPage_image.Name = "tabPage_image";
+            this.tabPage_image.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage_image.Size = new System.Drawing.Size(1291, 552);
+            this.tabPage_image.TabIndex = 1;
+            this.tabPage_image.Text = "Image";
+            this.tabPage_image.UseVisualStyleBackColor = true;
             // 
             // groupBox1
             // 
@@ -375,6 +375,7 @@
             this.button_loadimage.ImageList = this.imageList1;
             this.button_loadimage.Location = new System.Drawing.Point(265, 5);
             this.button_loadimage.Name = "button_loadimage";
+            this.button_loadimage.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.button_loadimage.Size = new System.Drawing.Size(88, 23);
             this.button_loadimage.TabIndex = 0;
             this.button_loadimage.Text = "    Load Image";
@@ -411,9 +412,9 @@
             this.checkBox_big.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBox_big.Location = new System.Drawing.Point(187, 9);
             this.checkBox_big.Name = "checkBox_big";
-            this.checkBox_big.Size = new System.Drawing.Size(75, 17);
+            this.checkBox_big.Size = new System.Drawing.Size(79, 17);
             this.checkBox_big.TabIndex = 8;
-            this.checkBox_big.Text = "big picture";
+            this.checkBox_big.Text = "640(320)px";
             this.checkBox_big.UseVisualStyleBackColor = true;
             this.checkBox_big.CheckedChanged += new System.EventHandler(this.checkBox_small_CheckedChanged);
             // 
@@ -427,7 +428,7 @@
             this.button_cancelimg.Name = "button_cancelimg";
             this.button_cancelimg.Size = new System.Drawing.Size(75, 23);
             this.button_cancelimg.TabIndex = 9;
-            this.button_cancelimg.Text = "  Cancel";
+            this.button_cancelimg.Text = "   Cancel";
             this.button_cancelimg.UseVisualStyleBackColor = true;
             this.button_cancelimg.Click += new System.EventHandler(this.button_cancelimg_Click);
             // 
@@ -468,7 +469,7 @@
             // 
             // pictureBox_rximage
             // 
-            this.pictureBox_rximage.BackgroundImage = global::oscardata.Properties.Resources.image1;
+            this.pictureBox_rximage.BackgroundImage = global::oscardata.Properties.Resources.hintergrundxcf;
             this.pictureBox_rximage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.pictureBox_rximage.Location = new System.Drawing.Point(642, 27);
             this.pictureBox_rximage.Name = "pictureBox_rximage";
@@ -479,7 +480,7 @@
             // 
             // pictureBox_tximage
             // 
-            this.pictureBox_tximage.BackgroundImage = global::oscardata.Properties.Resources.image;
+            this.pictureBox_tximage.BackgroundImage = global::oscardata.Properties.Resources.hintergrundxcf;
             this.pictureBox_tximage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.pictureBox_tximage.Location = new System.Drawing.Point(1, 27);
             this.pictureBox_tximage.Name = "pictureBox_tximage";
@@ -489,12 +490,12 @@
             // 
             // tabControl1
             // 
-            this.tabControl1.Controls.Add(this.tabPage2);
-            this.tabControl1.Controls.Add(this.tabPage3);
+            this.tabControl1.Controls.Add(this.tabPage_image);
+            this.tabControl1.Controls.Add(this.tabPage_file);
             this.tabControl1.Controls.Add(this.tabPage_audio);
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage5);
-            this.tabControl1.Controls.Add(this.tabPage4);
+            this.tabControl1.Controls.Add(this.tabPage_ber);
+            this.tabControl1.Controls.Add(this.tabPage_setup);
+            this.tabControl1.Controls.Add(this.tabPage_about);
             this.tabControl1.ImageList = this.imageList1;
             this.tabControl1.Location = new System.Drawing.Point(5, 3);
             this.tabControl1.Name = "tabControl1";
@@ -502,26 +503,26 @@
             this.tabControl1.Size = new System.Drawing.Size(1299, 579);
             this.tabControl1.TabIndex = 3;
             // 
-            // tabPage3
+            // tabPage_file
             // 
-            this.tabPage3.Controls.Add(this.pictureBox1);
-            this.tabPage3.Controls.Add(this.button2);
-            this.tabPage3.Controls.Add(this.bt_openrxfile);
-            this.tabPage3.Controls.Add(this.label_rxfile);
-            this.tabPage3.Controls.Add(this.label_txfile);
-            this.tabPage3.Controls.Add(this.rtb_RXfile);
-            this.tabPage3.Controls.Add(this.rtb_TXfile);
-            this.tabPage3.Controls.Add(this.bt_file_send);
-            this.tabPage3.Controls.Add(this.bt_sendBinaryFile);
-            this.tabPage3.Controls.Add(this.bt_file_html);
-            this.tabPage3.Controls.Add(this.bt_file_ascii);
-            this.tabPage3.ImageIndex = 9;
-            this.tabPage3.Location = new System.Drawing.Point(4, 23);
-            this.tabPage3.Name = "tabPage3";
-            this.tabPage3.Size = new System.Drawing.Size(1291, 552);
-            this.tabPage3.TabIndex = 2;
-            this.tabPage3.Text = "File";
-            this.tabPage3.UseVisualStyleBackColor = true;
+            this.tabPage_file.Controls.Add(this.pictureBox1);
+            this.tabPage_file.Controls.Add(this.button2);
+            this.tabPage_file.Controls.Add(this.bt_openrxfile);
+            this.tabPage_file.Controls.Add(this.label_rxfile);
+            this.tabPage_file.Controls.Add(this.label_txfile);
+            this.tabPage_file.Controls.Add(this.rtb_RXfile);
+            this.tabPage_file.Controls.Add(this.rtb_TXfile);
+            this.tabPage_file.Controls.Add(this.bt_file_send);
+            this.tabPage_file.Controls.Add(this.bt_sendBinaryFile);
+            this.tabPage_file.Controls.Add(this.bt_file_html);
+            this.tabPage_file.Controls.Add(this.bt_file_ascii);
+            this.tabPage_file.ImageIndex = 9;
+            this.tabPage_file.Location = new System.Drawing.Point(4, 23);
+            this.tabPage_file.Name = "tabPage_file";
+            this.tabPage_file.Size = new System.Drawing.Size(1291, 552);
+            this.tabPage_file.TabIndex = 2;
+            this.tabPage_file.Text = "File";
+            this.tabPage_file.UseVisualStyleBackColor = true;
             // 
             // pictureBox1
             // 
@@ -682,9 +683,9 @@
             this.rb_codec2.AutoSize = true;
             this.rb_codec2.Location = new System.Drawing.Point(92, 50);
             this.rb_codec2.Name = "rb_codec2";
-            this.rb_codec2.Size = new System.Drawing.Size(289, 17);
+            this.rb_codec2.Size = new System.Drawing.Size(342, 17);
             this.rb_codec2.TabIndex = 23;
-            this.rb_codec2.Text = "CODEC-2 parametric audio codec. Audio rate: 3200 bps";
+            this.rb_codec2.Text = "CODEC-2 parametric audio codec. For QPSK. Audio rate: 3200 bps";
             this.rb_codec2.UseVisualStyleBackColor = true;
             // 
             // pictureBox2
@@ -703,10 +704,10 @@
             this.rb_opus.Checked = true;
             this.rb_opus.Location = new System.Drawing.Point(92, 27);
             this.rb_opus.Name = "rb_opus";
-            this.rb_opus.Size = new System.Drawing.Size(290, 17);
+            this.rb_opus.Size = new System.Drawing.Size(348, 17);
             this.rb_opus.TabIndex = 0;
             this.rb_opus.TabStop = true;
-            this.rb_opus.Text = "OPUS rate adaptive codec. Audio rate: 84% of data rate";
+            this.rb_opus.Text = "OPUS rate adaptive codec. For 8APSK. Audio rate: 84% of data rate";
             this.rb_opus.UseVisualStyleBackColor = true;
             // 
             // groupBox6
@@ -910,33 +911,46 @@
             this.label11.TabIndex = 10;
             this.label11.Text = "Microphone:";
             // 
-            // tabPage5
+            // tabPage_setup
             // 
-            this.tabPage5.Controls.Add(this.groupBox4);
-            this.tabPage5.Controls.Add(this.groupBox3);
-            this.tabPage5.Controls.Add(this.groupBox2);
-            this.tabPage5.ImageIndex = 6;
-            this.tabPage5.Location = new System.Drawing.Point(4, 23);
-            this.tabPage5.Name = "tabPage5";
-            this.tabPage5.Size = new System.Drawing.Size(1291, 552);
-            this.tabPage5.TabIndex = 4;
-            this.tabPage5.Text = "Setup";
-            this.tabPage5.UseVisualStyleBackColor = true;
+            this.tabPage_setup.Controls.Add(this.groupBox4);
+            this.tabPage_setup.Controls.Add(this.groupBox3);
+            this.tabPage_setup.Controls.Add(this.groupBox2);
+            this.tabPage_setup.ImageIndex = 6;
+            this.tabPage_setup.Location = new System.Drawing.Point(4, 23);
+            this.tabPage_setup.Name = "tabPage_setup";
+            this.tabPage_setup.Size = new System.Drawing.Size(1291, 552);
+            this.tabPage_setup.TabIndex = 4;
+            this.tabPage_setup.Text = "Setup";
+            this.tabPage_setup.UseVisualStyleBackColor = true;
             // 
             // groupBox4
             // 
+            this.groupBox4.Controls.Add(this.cb_language);
             this.groupBox4.Controls.Add(this.cb_autostart);
             this.groupBox4.Controls.Add(this.bt_shutdown);
             this.groupBox4.Controls.Add(this.tb_shutdown);
             this.groupBox4.Controls.Add(this.bt_resetmodem);
-            this.groupBox4.Controls.Add(this.textBox2);
             this.groupBox4.Controls.Add(this.textBox3);
             this.groupBox4.Location = new System.Drawing.Point(12, 259);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(674, 105);
+            this.groupBox4.Size = new System.Drawing.Size(674, 121);
             this.groupBox4.TabIndex = 15;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Maintenance";
+            // 
+            // cb_language
+            // 
+            this.cb_language.FormattingEnabled = true;
+            this.cb_language.Items.AddRange(new object[] {
+            "English",
+            "German/Deutsch"});
+            this.cb_language.Location = new System.Drawing.Point(207, 19);
+            this.cb_language.Name = "cb_language";
+            this.cb_language.Size = new System.Drawing.Size(110, 21);
+            this.cb_language.TabIndex = 24;
+            this.cb_language.Text = "English";
+            this.cb_language.SelectedIndexChanged += new System.EventHandler(this.cb_language_SelectedIndexChanged);
             // 
             // cb_autostart
             // 
@@ -949,6 +963,7 @@
             this.cb_autostart.TabIndex = 4;
             this.cb_autostart.Text = "AUTO start/stop HSmodem";
             this.cb_autostart.UseVisualStyleBackColor = true;
+            this.cb_autostart.CheckedChanged += new System.EventHandler(this.cb_autostart_CheckedChanged);
             // 
             // bt_shutdown
             // 
@@ -974,7 +989,7 @@
             // 
             // bt_resetmodem
             // 
-            this.bt_resetmodem.Location = new System.Drawing.Point(183, 17);
+            this.bt_resetmodem.Location = new System.Drawing.Point(356, 82);
             this.bt_resetmodem.Name = "bt_resetmodem";
             this.bt_resetmodem.Size = new System.Drawing.Size(117, 23);
             this.bt_resetmodem.TabIndex = 6;
@@ -982,19 +997,6 @@
             this.bt_resetmodem.UseVisualStyleBackColor = true;
             this.bt_resetmodem.Visible = false;
             this.bt_resetmodem.Click += new System.EventHandler(this.bt_resetmodem_Click);
-            // 
-            // textBox2
-            // 
-            this.textBox2.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.textBox2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox2.ForeColor = System.Drawing.Color.Black;
-            this.textBox2.Location = new System.Drawing.Point(183, 46);
-            this.textBox2.Multiline = true;
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(126, 50);
-            this.textBox2.TabIndex = 11;
-            this.textBox2.Text = "in case the RX has sync\r\nproblems, it can be\r\nre-initialized here.";
-            this.textBox2.Visible = false;
             // 
             // textBox3
             // 
@@ -1075,7 +1077,7 @@
             this.tb_CAPvol.Name = "tb_CAPvol";
             this.tb_CAPvol.Size = new System.Drawing.Size(100, 24);
             this.tb_CAPvol.TabIndex = 14;
-            this.tb_CAPvol.TickStyle = System.Windows.Forms.TickStyle.None;
+            this.tb_CAPvol.TickFrequency = 10;
             this.tb_CAPvol.Value = 50;
             this.tb_CAPvol.Scroll += new System.EventHandler(this.tb_CAPvol_Scroll);
             // 
@@ -1089,7 +1091,7 @@
             this.tb_PBvol.Name = "tb_PBvol";
             this.tb_PBvol.Size = new System.Drawing.Size(100, 24);
             this.tb_PBvol.TabIndex = 13;
-            this.tb_PBvol.TickStyle = System.Windows.Forms.TickStyle.None;
+            this.tb_PBvol.TickFrequency = 10;
             this.tb_PBvol.Value = 50;
             this.tb_PBvol.Scroll += new System.EventHandler(this.tb_PBvol_Scroll);
             // 
@@ -1263,16 +1265,16 @@
             this.cb_stampcall.Text = "Insert Callsign into picture";
             this.cb_stampcall.UseVisualStyleBackColor = true;
             // 
-            // tabPage4
+            // tabPage_about
             // 
-            this.tabPage4.Controls.Add(this.richTextBox1);
-            this.tabPage4.ImageIndex = 12;
-            this.tabPage4.Location = new System.Drawing.Point(4, 23);
-            this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Size = new System.Drawing.Size(1291, 552);
-            this.tabPage4.TabIndex = 6;
-            this.tabPage4.Text = "About";
-            this.tabPage4.UseVisualStyleBackColor = true;
+            this.tabPage_about.Controls.Add(this.richTextBox1);
+            this.tabPage_about.ImageIndex = 12;
+            this.tabPage_about.Location = new System.Drawing.Point(4, 23);
+            this.tabPage_about.Name = "tabPage_about";
+            this.tabPage_about.Size = new System.Drawing.Size(1291, 552);
+            this.tabPage_about.TabIndex = 6;
+            this.tabPage_about.Text = "About";
+            this.tabPage_about.UseVisualStyleBackColor = true;
             // 
             // richTextBox1
             // 
@@ -1426,20 +1428,20 @@
             this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "QO-100 NB Transponder HS Multimedia Modem AMSAT-DL V0.4 by DJ0ABR";
+            this.Text = "QO-100 NB Transponder HS Multimedia Modem AMSAT-DL V0.44 by DJ0ABR";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
-            this.tabPage1.ResumeLayout(false);
-            this.tabPage2.ResumeLayout(false);
-            this.tabPage2.PerformLayout();
+            this.tabPage_ber.ResumeLayout(false);
+            this.tabPage_image.ResumeLayout(false);
+            this.tabPage_image.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_rximage)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_tximage)).EndInit();
             this.tabControl1.ResumeLayout(false);
-            this.tabPage3.ResumeLayout(false);
-            this.tabPage3.PerformLayout();
+            this.tabPage_file.ResumeLayout(false);
+            this.tabPage_file.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.tabPage_audio.ResumeLayout(false);
             this.groupBox7.ResumeLayout(false);
@@ -1454,7 +1456,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.pb_voicePBstatus)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_mic)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.tb_loadspeaker)).EndInit();
-            this.tabPage5.ResumeLayout(false);
+            this.tabPage_setup.ResumeLayout(false);
             this.groupBox4.ResumeLayout(false);
             this.groupBox4.PerformLayout();
             this.groupBox3.ResumeLayout(false);
@@ -1465,7 +1467,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.tb_PBvol)).EndInit();
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
-            this.tabPage4.ResumeLayout(false);
+            this.tabPage_about.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pb_rxsync)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pb_rxsignal)).EndInit();
             this.ResumeLayout(false);
@@ -1482,11 +1484,11 @@
         private System.Windows.Forms.Panel panel_constel;
         private System.Windows.Forms.Timer timer_qpsk;
         private System.Windows.Forms.Panel panel_txspectrum;
-        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TabPage tabPage_ber;
         private System.Windows.Forms.Button button_stopBERtest;
         private System.Windows.Forms.Button button_startBERtest;
         private System.Windows.Forms.RichTextBox rtb;
-        private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.TabPage tabPage_image;
         private System.Windows.Forms.ComboBox comboBox_quality;
         private System.Windows.Forms.Button button_loadimage;
         private System.Windows.Forms.Button button_cancelimg;
@@ -1500,7 +1502,7 @@
         private System.Windows.Forms.TabControl tabControl1;
         private System.Windows.Forms.ToolStripStatusLabel ts_ip;
         private System.Windows.Forms.Panel groupBox1;
-        private System.Windows.Forms.TabPage tabPage3;
+        private System.Windows.Forms.TabPage tabPage_file;
         private System.Windows.Forms.RichTextBox rtb_TXfile;
         private System.Windows.Forms.Button bt_file_send;
         private System.Windows.Forms.Button bt_sendBinaryFile;
@@ -1518,7 +1520,7 @@
         private System.Windows.Forms.CheckBox cb_loop;
         private System.Windows.Forms.Label label_nextimage;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.TabPage tabPage5;
+        private System.Windows.Forms.TabPage tabPage_setup;
         private System.Windows.Forms.TextBox tb_callsign;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.CheckBox cb_stampcall;
@@ -1529,7 +1531,6 @@
         private System.Windows.Forms.ComboBox cb_audioCAP;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ComboBox cb_audioPB;
-        private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.GroupBox groupBox4;
         private System.Windows.Forms.GroupBox groupBox3;
         private System.Windows.Forms.GroupBox groupBox2;
@@ -1569,7 +1570,7 @@
         private System.Windows.Forms.ImageList imageList1;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.PictureBox pictureBox2;
-        private System.Windows.Forms.TabPage tabPage4;
+        private System.Windows.Forms.TabPage tabPage_about;
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.PictureBox pb_voiceCAPstatus;
         private System.Windows.Forms.PictureBox pb_voicePBstatus;
@@ -1584,6 +1585,7 @@
         private System.Windows.Forms.Label lb_rxsignal;
         private System.Windows.Forms.Label lb_rxsync;
         private System.Windows.Forms.PictureBox pb_rxsync;
+        private System.Windows.Forms.ComboBox cb_language;
     }
 }
 
