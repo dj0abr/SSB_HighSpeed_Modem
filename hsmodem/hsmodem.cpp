@@ -24,7 +24,7 @@
 */
 
 /*
-* this is a console program
+* this is a console program 
 * it can be compiled under Linux: make
 * and under Windows: Visual-Studio
 * 
@@ -65,11 +65,11 @@ char ownfilename[] = { "hsmodem" };
 char appIP[20] = { 0 };
 int fixappIP = 0;
 int restart_modems = 0;
+int init_voice = 0;
 int trigger_resetmodem = 0;
 char homepath[1000] = { 0 };
 
 int caprate = 44100;
-int physRXcaprate = 44100;
 int txinterpolfactor = 20;
 int rxPreInterpolfactor = 5;
 int linespeed = 4410;
@@ -79,19 +79,19 @@ char playbackDeviceName[101] = { 0 };
 char micDeviceName[101] = { 0 };
 char lsDeviceName[101] = { 0 };
 
-float softwareCAPvolume = 1;
-float softwarePBvolume = 1;
-float softwareMICvolume = 1;
-float softwareLSvolume = 1;
-
 int announcement = 0;
 int VoiceAudioMode = VOICEMODE_OFF;
 int codec = 1;  // 0=opus, 1=codec2
 int tuning = 0;
 int marker = 1;
 
-int init_audio_result = 0;
 int init_voice_result = 0;
+
+// number of audio device in libkmaudio
+int io_capidx = 0;
+int io_pbidx = 0;
+int voice_capidx = 0;
+int voice_pbidx = 0;
 
 int safemode = 0;
 int sendIntro = 0;
@@ -182,7 +182,7 @@ int main(int argc, char* argv[])
 
     struct stat st = { 0 };
 
-    char nd[1000];
+    char nd[1100];
     sprintf(nd, "%s/oscardata", homepath);
     if (stat(nd, &st) == -1) 
     {
@@ -194,6 +194,9 @@ int main(int argc, char* argv[])
 #endif
     printf("user home path:<%s>\n", homepath);
 
+    init_tune();
+    kmaudio_init();
+    kmaudio_getDeviceList();
     init_packer();
     initFEC();
 
@@ -207,6 +210,8 @@ int main(int argc, char* argv[])
 
     while (keeprunning)
     {
+        int wait = 1;
+
         if (restart_modems == 1)
         {
             printf("restart modem requested\n");
@@ -214,25 +219,36 @@ int main(int argc, char* argv[])
             restart_modems = 0;
         }
 
+        if (init_voice == 1)
+        {
+            initVoice();
+            init_voice = 0;
+        }
+
         //doArraySend();
         if (VoiceAudioMode == VOICEMODE_INTERNALLOOP)
         {
             // loop voice mic to LS
-            float f;
-            while (io_mic_read_fifo(&f))
-            {
-                io_ls_write_fifo(f);
-            }
+            float f[1100]; // 1.1 x need rate to have reserve for resampler
+            int anz = kmaudio_readsamples(voice_capidx, f, 1000, micvol, 0);
+            if (anz > 0)
+                kmaudio_playsamples(voice_pbidx, f, anz,lsvol);
         }
 
         if (VoiceAudioMode == VOICEMODE_RECORD)
         {
             // loop voice mic to LS, and record into PCM file
-            float f;
-            while (io_mic_read_fifo(&f))
+            float f[1100];
+            while (1)
             {
-                io_saveStream(f);
-                io_ls_write_fifo(f);
+                int anz = kmaudio_readsamples(voice_capidx, f, 1000, micvol,0);
+                if (anz > 0)
+                {
+                    io_saveStream(f, anz);
+                    kmaudio_playsamples(voice_pbidx, f, anz,lsvol);
+                }
+                else
+                    break;
             }
         }
 
@@ -246,7 +262,8 @@ int main(int argc, char* argv[])
         {
             // send mic to codec
             float f;
-            while (io_mic_read_fifo(&f))
+            while(kmaudio_readsamples(voice_capidx, &f, 1, micvol,0))
+            //while (io_mic_read_fifo(&f))
             {
                 encode(f);
             }
@@ -255,36 +272,34 @@ int main(int argc, char* argv[])
         if (tuning != 0)
         {
             do_tuning(tuning);
+            wait = 0;
         }
         
         if (speedmode == 10)
         {
+            // nothing to do here
             //testall();
             //fmtest();
-            sleep_ms(10);   // nothing to do here
         }
         else
         {
-            // demodulate incoming audio data stream
-            static uint64_t old_tm = 0;
+#ifdef _LINUX_
+            /*static uint64_t old_tm = 0;
             uint64_t tm = getms();
             if (tm >= (old_tm + 1000))
             {
                 // read Audio device list every 1s
-                io_readAudioDevices();
+                // runtime dectection currently works under linux only
+                kmaudio_getDeviceList();
                 old_tm = tm;
-            }
-            int dret = demodulator();
-            if (dret == 0)
-            {
-                // no new data in fifo
-#ifdef _LINUX_
-            // not important how long to sleep, 10ms is fine
-                sleep_ms(10);
+            }*/
 #endif
-            }
+
+            // demodulate incoming audio data stream
+            int dret = demodulator();
+            if (dret) wait = 0;
         }
-        
+        if (wait) sleep_ms(10);
     }
     printf("stopped: %d\n", keeprunning);
 
@@ -335,7 +350,6 @@ void startModem()
     printf("startModem\n");
     close_dsp();
     close_rtty();
-    io_close_audio();
     speedmode = set_speedmode;
 
     bitsPerSymbol = sr[speedmode].bpsym;
@@ -348,7 +362,20 @@ void startModem()
     opusbitrate = sr[speedmode].codecrate;
 
     // int TX audio and modulator
-    init_audio_result = io_init_sound(playbackDeviceName, captureDeviceName);
+    io_capidx = kmaudio_startCapture(captureDeviceName, caprate);
+    if (io_capidx == -1)
+    {
+        printf("CAP: cannot open device: %s\n", captureDeviceName);
+        return;
+    }
+
+    io_pbidx = kmaudio_startPlayback(playbackDeviceName, caprate);
+    if (io_pbidx == -1)
+    {
+        printf("PB: cannot open device: %s\n", playbackDeviceName);
+        return;
+    }
+
     _init_fft();
     if (speedmode < 10)
     {
@@ -358,6 +385,26 @@ void startModem()
     {
         rtty_txoff = 1;
         init_rtty();
+    }
+
+    init_tune();
+}
+
+void initVoice()
+{
+    // init voice audio
+    if (VoiceAudioMode == VOICEMODE_OFF)
+    {
+        float f = 0.0f;
+        io_saveStream(&f, 1);    // close recording
+        close_voiceproc();
+    }
+    else
+    {
+        
+        voice_capidx = kmaudio_startCapture(micDeviceName, VOICE_SAMPRATE);
+        voice_pbidx = kmaudio_startPlayback(lsDeviceName, VOICE_SAMPRATE);
+        init_voiceproc();
     }
 }
 
@@ -527,35 +574,37 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // reset liquid RX modem
         tuning = 0;
         resetModem();
-        io_clear_audio_fifos();
+        //io_clear_audio_fifos();
+        io_fifo_clear(voice_pbidx);
+        io_fifo_clear(voice_capidx);
         return;
     }
 
     if (type == 21)
     {
         // set playback volume (in % 0..100)
-        io_setVolume(0,minfo);
+        io_setPBvolume(minfo);
         return;
     }
 
     if (type == 22)
     {
         // set capture volume (in % 0..100)
-        io_setVolume(1,minfo);
+        io_setCAPvolume(minfo);
         return;
     }
 
     if (type == 23)
     {
         // set playback volume (in % 0..100)
-        setVolume_voice(0, minfo);
+        io_setLSvolume(minfo);
         return;
     }
 
     if (type == 24)
     {
         // set capture volume (in % 0..100)
-        setVolume_voice(1, minfo);
+        io_setMICvolume(minfo);
         return;
     }
 
@@ -579,18 +628,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 
         //printf("LS:<%s> MIC:<%s> Mode:%d codec:%d\n", lsDeviceName, micDeviceName, VoiceAudioMode, codec);
 
-        // init voice audio
-        if (VoiceAudioMode == VOICEMODE_OFF)
-        {
-            io_saveStream(0.0f);    // close recording
-            close_voiceproc();
-            io_close_voice();
-        }
-        else
-        {
-            init_voice_result = io_init_voice(lsDeviceName, micDeviceName);
-            init_voiceproc();
-        }
+        init_voice = 1;
         return;
     }
 
@@ -681,7 +719,7 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         printf("data from app: wrong length:%d (should be %d)\n", len - 2, PAYLOADLEN);
         return;
     }
-
+    
     //if (getSending() == 1) return;   // already sending (Array sending)
 
     if (minfo == 0 || minfo == 3)
@@ -696,6 +734,8 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // one frame has 258 bytes, so we need for 6s: 6* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
         toGR_sendData(pdata + 2, type, minfo,0);
         int numframespreamble = 6 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
+        if (type == 1)// BER Test
+            numframespreamble = 1;
         for (int i = 0; i < numframespreamble; i++)
             toGR_sendData(pdata + 2, type, minfo,1);
     }
@@ -743,8 +783,7 @@ void toGR_sendData(uint8_t* data, int type, int status, int repeat)
 
     //showbytestring((char *)"BERtx: ", txdata, len);
 
-    if (txdata != NULL)
-        sendToModulator(txdata, len);
+    if (txdata != NULL) sendToModulator(txdata, len);
 }
 
 // called by liquid demodulator for received data

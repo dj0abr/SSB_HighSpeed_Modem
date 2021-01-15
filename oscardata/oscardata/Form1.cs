@@ -57,8 +57,6 @@ namespace oscardata
             // init GUI
             InitializeComponent();
 
-            //showSSTV();
-
             // needed for ARM mono, which cannot load a picbox directly from file
             var bmp = new Bitmap(Resources.hintergrundxcf);
             pictureBox_rximage.BackgroundImage = bmp;
@@ -222,8 +220,8 @@ namespace oscardata
                 {
                     if (s.Length > 1)
                     {
-                        cb_audioPB.Items.Add(s);
-                        cb_loudspeaker.Items.Add(s);
+                        cb_audioPB.Items.Add(s.Substring(1));
+                        cb_loudspeaker.Items.Add(s.Substring(1));
                     }
                 }
                 cb_loudspeaker.EndUpdate();
@@ -240,8 +238,8 @@ namespace oscardata
                 {
                     if (s.Length > 1)
                     {
-                        cb_audioCAP.Items.Add(s);
-                        cb_mic.Items.Add(s);
+                        cb_audioCAP.Items.Add(s.Substring(1));
+                        cb_mic.Items.Add(s.Substring(1));
                     }
                 }
                 cb_mic.EndUpdate();
@@ -592,7 +590,7 @@ namespace oscardata
             if (statics.CAPfifousage < progressBar_capfifo.Minimum) progressBar_capfifo.Value = progressBar_capfifo.Minimum;
             else if (statics.CAPfifousage >= progressBar_capfifo.Maximum) progressBar_capfifo.Value = progressBar_capfifo.Maximum - 1;
             else progressBar_capfifo.Value = statics.CAPfifousage;
-            if (statics.CAPfifousage > 50) progressBar_capfifo.ForeColor = Color.Red; else progressBar_capfifo.ForeColor = Color.Green;
+            if (statics.CAPfifousage > 80) progressBar_capfifo.ForeColor = Color.Red; else progressBar_capfifo.ForeColor = Color.Green;
 
             // Show RX Status LEDs
             if (statics.RXlevelDetected == 1 || statics.RXinSync == 1)
@@ -621,7 +619,7 @@ namespace oscardata
             if (vl < 20 || vl > 85)
                 vu_cap.ForeColor = Color.Red;
             else
-                vu_cap.ForeColor = Color.Yellow;
+                vu_cap.ForeColor = Color.LightGreen;
 
             addf = 80;
             vl = ((double)statics.maxTXlevel / addf) + Math.Log10((double)statics.maxTXlevel + factor);
@@ -633,7 +631,7 @@ namespace oscardata
             if(vl <20 || vl > 85)
                 vu_pb.ForeColor = Color.Red;
             else
-                vu_pb.ForeColor = Color.Yellow;
+                vu_pb.ForeColor = Color.LightGreen;
 
             if (recordStatus == 1)
             {
@@ -744,13 +742,20 @@ namespace oscardata
         Font fnt = new Font("Verdana", 8.0f);
         Font smallfnt = new Font("Verdana", 6.0f);
 
+        Bitmap lastbm = null;
         private void panel_txspectrum_Paint(object sender, PaintEventArgs e)
         {
             Bitmap bm = Udp.UdpFftBitmap();
             if (bm != null)
             {
+                try { if (lastbm != null) lastbm.Dispose(); } catch { }
                 e.Graphics.DrawImage(bm, 0, 0);
-                bm.Dispose();
+                lastbm = bm;
+            }
+            else
+            {
+                if(lastbm != null)
+                    e.Graphics.DrawImage(lastbm, 0, 0);
             }
             return;
         }
@@ -1106,6 +1111,7 @@ namespace oscardata
             //txcommand = statics.noTX;    // finished
             label_rximage.ForeColor = Color.Black;
             pictureBox_rximage.Image = null;
+            cb_loop.Checked = false;
             ArraySend.stopSending();
             bt_resetmodem_Click(null, null);
         }
@@ -1550,7 +1556,6 @@ namespace oscardata
                 bt_resetmodem.Visible = true;
                 bt_tune_minus.Visible = true;
                 bt_tune_plus.Visible = true;
-                cb_marker.Visible = true;
             }
         }
 
@@ -1983,8 +1988,7 @@ namespace oscardata
                 lb_rxsync.Text = "RX Sync:";
                 cb_sendIntro.Text = "send introduction before TX";
                 tb_recintro.Text = "record introduction";
-                lb_tuningqrgs.Text = "Send Mid-Frequency:";
-                cb_marker.Text = "2.9kHz Tuning Marker";
+                lb_tuningqrgs.Text = "Send Marker Frequency:";
                 label13.Text = "Data Security:";
                 textBox5.Text = "Click on Callsign or Name in RX window";
                 textBox2.Text = @"Special Markers:
@@ -2063,8 +2067,7 @@ namespace oscardata
                 tb_shutdown.Text = "Vor dem Ausschalten eines SBC diesen hier herunterfahren";
                 cb_sendIntro.Text = "sende Vorstellung vor TX";
                 tb_recintro.Text = "Vorstellung aufnehmen";
-                lb_tuningqrgs.Text = "Sende Mittenfrequenz:";
-                cb_marker.Text = "2,9kHz Tuning Markierung";
+                lb_tuningqrgs.Text = "Sende Frequenzmarkierung:";
                 label13.Text = "Datensicherheit:";
                 textBox5.Text = "Klicke auf Rufzeichen und Namen im RX Fenster";
                 textBox2.Text = @"Spezialzeichen:
@@ -2225,15 +2228,12 @@ namespace oscardata
 
         private void bt_allf_Click(object sender, EventArgs e)
         {
-            bt_tuning(5);
+            bt_tuning(7);
         }
 
-        private void cb_marker_CheckedChanged(object sender, EventArgs e)
+        private void button6_Click(object sender, EventArgs e)
         {
-            Byte[] txdata = new byte[2];
-            txdata[0] = statics.marker;
-            txdata[1] = (Byte)(cb_marker.Checked ? 1 : 0);
-            Udp.UdpSendCtrl(txdata);
+            bt_tuning(1);
         }
 
         private void bt_tune_minus_Click(object sender, EventArgs e)
