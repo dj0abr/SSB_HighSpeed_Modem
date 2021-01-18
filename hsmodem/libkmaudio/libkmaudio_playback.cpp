@@ -42,6 +42,15 @@ int playCallback(const void* inputBuffer,
 	PaStreamCallbackFlags           statusFlags,
 	void* userData);
 
+void close_playback_stream(int idx)
+{
+	if (devlist[idx].pbStream != NULL)
+	{
+		Pa_CloseStream(devlist[idx].pbStream);
+		devlist[idx].pbStream = NULL;
+	}
+}
+
 int kmaudio_startPlayback(char* devname, int samprate)
 {
 	printf("Start request for PB stream:%s\n", devname);
@@ -61,12 +70,7 @@ int kmaudio_startPlayback(char* devname, int samprate)
 
 	devlist[idx].working = 0;
 
-	if (devlist[idx].pbStream != NULL)
-	{
-		printf("Closing old PB stream:%s [%d]\n", devname, idx);
-		Pa_CloseStream(devlist[idx].pbStream);
-		devlist[idx].pbStream = NULL;
-	}
+	close_playback_stream(idx);
 
 	printf("Starting PB stream:%s [%d]\n", devname, idx);
 

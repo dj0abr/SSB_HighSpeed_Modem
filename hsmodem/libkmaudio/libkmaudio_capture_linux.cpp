@@ -112,6 +112,15 @@ void overflow_callback(struct SoundIoInStream* instream)
     printf("overflow %d\n", ++count);
 }
 
+void close_capture_stream(int idx)
+{
+    if (devlist[idx].instream != NULL)
+    {
+        soundio_instream_destroy(devlist[idx].instream);
+        devlist[idx].instream = NULL;
+    }
+}
+
 int kmaudio_startCapture(char* devname, int samprate)
 {
     printf("Start request for CAP stream:%s\n", devname);
@@ -127,12 +136,8 @@ int kmaudio_startCapture(char* devname, int samprate)
     if (capdevid == NULL) return -1;
 
     // if an old stream is open, close it
-    if (devlist[idx].instream != NULL)
-    {
-        printf("Closing old CAP stream:%s [%d]\n", devname, idx);
-        soundio_instream_destroy(devlist[idx].instream);
-        devlist[idx].instream = NULL;
-    }
+    close_capture_stream(idx);
+
     printf("Starting CAP stream:%s [%d]\n", devname, idx);
 
     io_fifo_clear(idx);

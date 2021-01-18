@@ -3,6 +3,7 @@
 #ifdef _WIN32
 #define _WIN32_
 	// ignore senseless warnings invented by M$ to confuse developers
+    // I love LINUX :-) which works 100000x better than Windows
 	#pragma warning( disable : 4091 )
 	#pragma warning( disable : 4003 )
 #else
@@ -230,6 +231,7 @@ void clear_rtty_txfifo();
 void fmtest();
 void rtty_init_pipes();
 void initVoice();
+void sendStationInfo();
 
 
 extern int speedmode;

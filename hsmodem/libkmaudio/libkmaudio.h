@@ -179,12 +179,32 @@ uint8_t* io_getAudioDevicelist(int* len);
 */
 uint8_t kmaudio_maxlevel(int id);
 
+/*
+* closes a stream which was started by 
+* kmaudio_startCapture or kmaudio_startPlayback
+* id ... stream ID which was returned by kmaudio_startCapture or kmaudio_startPlayback
+*/
+void close_stream(int id);
 
-
+/*
+* handle the FIFO which is used to buffer audio data
+* pipenum ... stream ID which was returned by kmaudio_startCapture or kmaudio_startPlayback
+* IMPORTANT: this information MUST be used to synchonize the data flow into
+* the fifo. The speed is always defined by the audio sample rate
+* by checking the fifo an application knows when it has to put more audio samples
+* into the fifo
+*/
+// returns number of remaining elements (audio 16 bit short values) 
 int io_fifo_freespace(int pipenum);
+
+// returns number of used elements (audio 16 bit short values) 
 int io_fifo_usedspace(int pipenum);
-void io_fifo_clear(int pipenum);
+
+// like before, but returns a number between 0 and 100 %
 int io_fifo_usedpercent(int pipenum);
+
+// clear the fifo
+void io_fifo_clear(int pipenum);
 
 
 // -------- functions for internal use only --------
@@ -237,6 +257,8 @@ uint64_t getms();
 void init_maxarray();
 void kmaudio_detectDropouts(int id);
 int io_read_fifo_num_short(int pipenum, int16_t* data, int num);
+void close_capture_stream(int idx);
+void close_playback_stream(int idx);
 
 extern DEVLIST devlist[MAXDEVICES];
 extern int devanz;

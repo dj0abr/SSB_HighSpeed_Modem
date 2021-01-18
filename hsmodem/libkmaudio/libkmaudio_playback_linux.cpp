@@ -136,6 +136,15 @@ void underflow_callback(struct SoundIoOutStream* outstream)
     printf("underflow %d\n", count++);
 }
 
+void close_playback_stream(int idx)
+{
+    if (devlist[idx].outstream != NULL)
+    {
+        soundio_outstream_destroy(devlist[idx].outstream);
+        devlist[idx].outstream = NULL;
+    }
+}
+
 int kmaudio_startPlayback(char* devname, int samprate)
 {
     printf("Start request for PB stream:%s\n", devname);
@@ -150,13 +159,7 @@ int kmaudio_startPlayback(char* devname, int samprate)
     char* pbdevid = getDevID(devname, 1, &idx);
     if (pbdevid == NULL) return -1;
 
-    // if an old stream is open, close it
-    if (devlist[idx].outstream != NULL)
-    {
-        printf("Closing old PB stream:%s [%d]\n", devname, idx);
-        soundio_outstream_destroy(devlist[idx].outstream);
-        devlist[idx].outstream = NULL;
-    }
+    close_playback_stream(idx);
 
     printf("Starting PB stream:%s [%d]\n", devname, idx);
 

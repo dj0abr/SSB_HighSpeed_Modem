@@ -37,6 +37,8 @@
             this.toolStripStatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.ts_ip = new System.Windows.Forms.ToolStripStatusLabel();
             this.RXstatus = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStrip_spacer = new System.Windows.Forms.ToolStripStatusLabel();
+            this.ts_userinfo = new System.Windows.Forms.ToolStripStatusLabel();
             this.panel_constel = new System.Windows.Forms.Panel();
             this.timer_qpsk = new System.Windows.Forms.Timer(this.components);
             this.panel_txspectrum = new System.Windows.Forms.Panel();
@@ -253,7 +255,9 @@
             this.toolStrip_Type,
             this.toolStripStatusLabel,
             this.ts_ip,
-            this.RXstatus});
+            this.RXstatus,
+            this.toolStrip_spacer,
+            this.ts_userinfo});
             this.statusStrip1.Location = new System.Drawing.Point(0, 671);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Size = new System.Drawing.Size(1296, 22);
@@ -285,6 +289,20 @@
             this.RXstatus.Name = "RXstatus";
             this.RXstatus.Size = new System.Drawing.Size(58, 17);
             this.RXstatus.Text = "RX-Status";
+            // 
+            // toolStrip_spacer
+            // 
+            this.toolStrip_spacer.Name = "toolStrip_spacer";
+            this.toolStrip_spacer.Size = new System.Drawing.Size(1156, 17);
+            this.toolStrip_spacer.Spring = true;
+            // 
+            // ts_userinfo
+            // 
+            this.ts_userinfo.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
+            this.ts_userinfo.ForeColor = System.Drawing.Color.Blue;
+            this.ts_userinfo.Name = "ts_userinfo";
+            this.ts_userinfo.Size = new System.Drawing.Size(16, 17);
+            this.ts_userinfo.Text = "...";
             // 
             // panel_constel
             // 
@@ -2268,7 +2286,7 @@
             this.ForeColor = System.Drawing.SystemColors.ControlText;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "AMSAT-DL Multimedia HS Modem V0.71 by DJ0ABR";
+            this.Text = "AMSAT-DL Multimedia HS Modem V0.72 by DJ0ABR";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
@@ -2498,6 +2516,8 @@
         private System.Windows.Forms.CheckBox cb_rx_autosync;
         private System.Windows.Forms.TextBox textBox6;
         private System.Windows.Forms.Button button6;
+        private System.Windows.Forms.ToolStripStatusLabel toolStrip_spacer;
+        private System.Windows.Forms.ToolStripStatusLabel ts_userinfo;
     }
 }
 

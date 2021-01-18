@@ -40,6 +40,15 @@ int recordCallback(const void* inputBuffer, void* outputBuffer,
     PaStreamCallbackFlags statusFlags,
     void* userData);
 
+void close_capture_stream(int idx)
+{
+	if (devlist[idx].capStream != NULL)
+	{
+		Pa_CloseStream(devlist[idx].capStream);
+		devlist[idx].capStream = NULL;
+	}
+}
+
 int kmaudio_startCapture(char* devname, int samprate)
 {
 	printf("Start request for CAP stream:%s\n", devname);
@@ -59,12 +68,8 @@ int kmaudio_startCapture(char* devname, int samprate)
 
 	devlist[idx].working = 0;
 
-	if (devlist[idx].capStream != NULL)
-	{
-		printf("Closing old CAP stream:%s [%d]\n", devname, idx);
-		Pa_CloseStream(devlist[idx].capStream);
-		devlist[idx].capStream = NULL;
-	}
+	close_capture_stream(idx);
+
 	printf("Starting CAP stream:%s [%d]\n", devname, idx);
 
 	io_fifo_clear(idx);

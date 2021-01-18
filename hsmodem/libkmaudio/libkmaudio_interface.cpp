@@ -3,6 +3,21 @@
 
 void getMax(int id, float fv);
 
+void close_stream(int id)
+{
+#ifdef WIN32
+	if (devlist[id].capStream != NULL)
+		close_capture_stream(id);
+	if (devlist[id].pbStream != NULL)
+	close_playback_stream(id);
+#else
+	if (devlist[id].instream != NULL)
+		close_capture_stream(id);
+	if (devlist[id].outstream != NULL)
+		close_playback_stream(id);
+#endif
+}
+
 /*
 * reads len samples from device id into psamp
 * returns: number of values written to psamp , -1=error
@@ -124,7 +139,6 @@ uint8_t kmaudio_maxlevel(int id)
 
 void kmaudio_detectDropouts(int id)
 {
-	int dropout = 0;
 	int stat = 0;
 	int drlen = 0;
 

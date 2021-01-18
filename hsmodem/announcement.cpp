@@ -92,7 +92,6 @@ void playAudioPCM(char* fn, int destination)
                 {
                     int to = 4000;
                     int res;
-                    //while ((res = io_ls_fifo_usedspace()) > 10000)
                     while ((res = io_fifo_usedspace(voice_pbidx)) > 10000)
                     {
                         if (--to == 0) 

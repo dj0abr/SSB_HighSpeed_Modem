@@ -202,12 +202,14 @@ void modulator(uint8_t sym_in)
     
         // adapt speed to soundcard samplerate
         int fs;
+        int to = 0;
         while(keeprunning)
         {
             fs = io_fifo_freespace(io_pbidx);
             // wait until there is space in fifo
             if(fs > 10) break;
             sleep_ms(10);
+            if (++to >= 400) break; // give up after 4s 
         }
 
         if (marker)

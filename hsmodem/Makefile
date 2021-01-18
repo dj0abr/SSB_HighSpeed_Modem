@@ -29,4 +29,5 @@ default: $(OBJ)
 
 clean:
 	rm -f *.o
-	
+	rm -f libkmaudio/*.o
+	rm -f libkmaudio/*.o

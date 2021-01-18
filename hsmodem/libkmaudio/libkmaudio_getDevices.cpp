@@ -235,15 +235,17 @@ int getRealSamprate(int idx)
 // build string of audio device name, to be sent to application as response to Broadcast search
 // starting with PB devices, sperarator ^, capture devices
 // separator between devices: ~
-// the first character is 0 or 1 and does not belong to the device name
-// it shows if this device was sucessfully started and is currently running (="1")
 #define MAXDEVSTRLEN (MAXDEVICES * (MAXDEVNAMELENGTH + 2) + 10)
 uint8_t io_devstring[MAXDEVSTRLEN];
 
 void io_buildAudioDevString()
 {
     memset(io_devstring, 0, sizeof(io_devstring));
-    io_devstring[0] = ' ';     // placeholder for ID for this UDP message
+    io_devstring[0] = ' ';     // placeholder for other data
+    io_devstring[1] = ' ';     
+    io_devstring[2] = ' ';
+    io_devstring[3] = ' ';
+    io_devstring[4] = ' ';
 
     // playback devices
     for (int i = 0; i < devanz; i++)
@@ -256,7 +258,6 @@ void io_buildAudioDevString()
         }
         if (devlist[i].in_out == 1)
         {
-            strcat((char*)io_devstring, devlist[i].working?"1":"0");
             strcat((char*)io_devstring, devlist[i].name);
             strcat((char*)io_devstring, "~");    // audio device separator
         }
@@ -275,15 +276,12 @@ void io_buildAudioDevString()
         }
         if (devlist[i].in_out == 0)
         {
-            strcat((char*)io_devstring, devlist[i].working ? "1" : "0");
             strcat((char*)io_devstring, devlist[i].name);
             strcat((char*)io_devstring, "~");    // audio device separator
         }
     }
 
     //printf("<%s>\n", (char *)io_devstring);
-
-    io_devstring[0] = 3;   // ID for this message
 }
 
 uint8_t* io_getAudioDevicelist(int* len)

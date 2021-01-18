@@ -82,6 +82,8 @@ void init_pipes()
 // ignore data if the fifo is full
 void io_write_fifo(int pipenum, float sample)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return;
+
     LOCK(pipenum);
     if (((io_wridx[pipenum] + 1) % AUDIO_FIFOFLEN) == io_rdidx[pipenum])
     {
@@ -98,6 +100,8 @@ void io_write_fifo(int pipenum, float sample)
 
 void io_write_fifo_short(int pipenum, int16_t sample)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return;
+
     LOCK(pipenum);
     if (((io_wridx[pipenum] + 1) % AUDIO_FIFOFLEN) == io_rdidx[pipenum])
     {
@@ -114,6 +118,8 @@ void io_write_fifo_short(int pipenum, int16_t sample)
 
 int io_read_fifo(int pipenum, float* data)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return 0;
+
     LOCK(pipenum);
 
     if (io_rdidx[pipenum] == io_wridx[pipenum])
@@ -136,6 +142,8 @@ int io_read_fifo(int pipenum, float* data)
 // if num elems not avail, return all what fifo has stored
 int io_read_fifo_num(int pipenum, float* data, int num)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return 0;
+
     LOCK(pipenum);
 
     int elemInFifo = (io_wridx[pipenum] + AUDIO_FIFOFLEN - io_rdidx[pipenum]) % AUDIO_FIFOFLEN;
@@ -166,6 +174,8 @@ int io_read_fifo_num(int pipenum, float* data, int num)
 
 int io_read_fifo_num_short(int pipenum, int16_t* data, int num)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return 0;
+
     LOCK(pipenum);
 
     int elemInFifo = (io_wridx[pipenum] + AUDIO_FIFOFLEN - io_rdidx[pipenum]) % AUDIO_FIFOFLEN;
@@ -193,11 +203,15 @@ int io_read_fifo_num_short(int pipenum, int16_t* data, int num)
 
 void io_fifo_clear(int pipenum)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return;
+
     io_wridx[pipenum] = io_rdidx[pipenum] = 0;
 }
 
 int io_fifo_freespace(int pipenum)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return 0;
+
     int freebuf = 0;
 
     LOCK(pipenum);
@@ -211,6 +225,8 @@ int io_fifo_freespace(int pipenum)
 
 int io_fifo_elems_avail(int pipenum)
 {
+    if (pipenum < 0 || pipenum >= NUM_OF_PIPES) return 0;
+
     int elems = 0;
 
     LOCK(pipenum);

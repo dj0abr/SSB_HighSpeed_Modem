@@ -44,8 +44,8 @@ namespace oscardata
         String old_tsip = "";
         bool modemrunning = false;
         receivefile recfile = new receivefile();
-        int last_initAudioStatus;
-        int last_initVoiceStatus;
+        int last_initAudioStatus = -1;
+        int last_initVoiceStatus = -1;
         int recordStatus = 0;
         int recPhase = 0;
         const int Rtty_deftext_anz = 20;
@@ -220,8 +220,8 @@ namespace oscardata
                 {
                     if (s.Length > 1)
                     {
-                        cb_audioPB.Items.Add(s.Substring(1));
-                        cb_loudspeaker.Items.Add(s.Substring(1));
+                        cb_audioPB.Items.Add(s);
+                        cb_loudspeaker.Items.Add(s);
                     }
                 }
                 cb_loudspeaker.EndUpdate();
@@ -238,8 +238,8 @@ namespace oscardata
                 {
                     if (s.Length > 1)
                     {
-                        cb_audioCAP.Items.Add(s.Substring(1));
-                        cb_mic.Items.Add(s.Substring(1));
+                        cb_audioCAP.Items.Add(s);
+                        cb_mic.Items.Add(s);
                     }
                 }
                 cb_mic.EndUpdate();
@@ -315,21 +315,17 @@ namespace oscardata
             }
         }
 
-        // correct entries in the Audio Device Comboboxes if Devices have changed
+        // correct entries in the Audio Device Comboboxes if devices have changed
         void findDevice(ComboBox cb)
         {
             int pos = -1;
 
             if (cb.Text.Length >= 4)
             {
-                // Device Name starts at Index 3 in the string
-                String dn = cb.Text.Substring(3);
                 int anz = cb.Items.Count;
                 for (int i = 0; i < anz; i++)
                 {
-                    String name = cb.Items[i].ToString();
-                    name = name.Substring(3);
-                    if (dn == name)
+                    if (cb.Text == cb.Items[i].ToString())
                     {
                         pos = i;
                         break;
@@ -348,7 +344,6 @@ namespace oscardata
             else
                 cb.Text = cb.Items[pos].ToString();
         }
-
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -442,6 +437,14 @@ namespace oscardata
                 showType(rxtype);
 
                 //Console.WriteLine("minfo:" + minfo + " data:" + rxdata[0].ToString("X2") + " " + rxdata[1].ToString("X2"));
+
+                if (rxtype == statics.Userinfo)
+                {
+                    String call = statics.ByteArrayToString(rxdata, 0, 20);
+                    String qthloc = statics.ByteArrayToString(rxdata, 20, 10);
+                    String name = statics.ByteArrayToString(rxdata, 30, 20);
+                    ts_userinfo.Text = call + " " + name + " " + qthloc;
+                }
 
                 // ========= receive file ==========
                 // handle file receive
@@ -1181,13 +1184,17 @@ namespace oscardata
         public String GetMyBroadcastIP()
         {
             String ip = "255.255.255.255";
+            /*
+            // selective BCs fail if the computer has multiple IPs
+            // therefore use 255.255.255.255
+
             String[] myips = statics.getOwnIPs();
-            //Console.WriteLine("BClen: " + myips.Length.ToString());
+            Console.WriteLine("BClen: " + myips.Length.ToString());
             // if PC has multiple IPs then use 255.255.255.255
-            /*for (int i = 0; i < myips.Length; i++)
+            for (int i = 0; i < myips.Length; i++)
             {
                 Console.WriteLine("ip:" + myips[i]);
-            }*/
+            }
             if (myips.Length >= 1)
             {
                 statics.MyIP = myips[0];
@@ -1199,7 +1206,7 @@ namespace oscardata
                     ip += ".255";
                     //Console.WriteLine("BCip: " + ip);
                 }
-            }
+            }*/
             return ip;
         }
                 
@@ -1231,7 +1238,7 @@ namespace oscardata
             if (cb_safemode.Text.Contains("medium")) safemode = 2;
             else if (cb_safemode.Text.Contains("high")) safemode = 4;
 
-            Byte[] txb = new byte[210];
+            Byte[] txb = new byte[260];
             txb[0] = 0x3c;  // ID of this message
             txb[1] = (Byte)tb_PBvol.Value;
             txb[2] = (Byte)tb_CAPvol.Value;
@@ -1248,6 +1255,7 @@ namespace oscardata
             //Byte[] bpb = statics.StringToByteArray(cb_audioPB.Text);
             //Byte[] bcap = statics.StringToByteArray(cb_audioCAP.Text);
 
+            // 200 Bytes (from 10..209) name of selected sound device
             for (int i=0; i<100; i++)
             {
                 if (i >= bpb.Length)
@@ -1259,6 +1267,28 @@ namespace oscardata
                     txb[i + 110] = 0;
                 else
                     txb[i + 110] = bcap[i];
+            }
+
+            // 210 .. 229 = Callsign
+            Byte[] callarr = statics.StringToByteArray(tb_callsign.Text);
+            for (int i = 0; i < 20; i++)
+            {
+                if (i >= callarr.Length) txb[i+210] = 0;
+                else txb[i + 210] = callarr[i];
+            }
+            // 230 .. 239 = qthloc
+            Byte[] qtharr = statics.StringToByteArray(tb_myqthloc.Text);
+            for (int i = 0; i < 10; i++)
+            {
+                if (i >= qtharr.Length) txb[i + 230] = 0;
+                else txb[i+230] = qtharr[i];
+            }
+            // 240 .. 259 = Name
+            Byte[] namearr = statics.StringToByteArray(tb_myname.Text);
+            for (int i = 0; i < 20; i++)
+            {
+                if (i >= namearr.Length) txb[i+240] = 0;
+                else txb[i + 240] = namearr[i];
             }
 
             if (statics.ModemIP == "1.2.3.4")

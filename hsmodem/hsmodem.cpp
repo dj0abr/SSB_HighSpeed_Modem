@@ -88,13 +88,17 @@ int marker = 1;
 int init_voice_result = 0;
 
 // number of audio device in libkmaudio
-int io_capidx = 0;
-int io_pbidx = 0;
-int voice_capidx = 0;
-int voice_pbidx = 0;
+int io_capidx = -1;
+int io_pbidx = -1;
+int voice_capidx = -1;
+int voice_pbidx = -1;
 
 int safemode = 0;
 int sendIntro = 0;
+
+char mycallsign[21];
+char myqthloc[11];
+char myname[21];
 
 int main(int argc, char* argv[])
 {
@@ -239,7 +243,7 @@ int main(int argc, char* argv[])
         {
             // loop voice mic to LS, and record into PCM file
             float f[1100];
-            while (1)
+            while (keeprunning)
             {
                 int anz = kmaudio_readsamples(voice_capidx, f, 1000, micvol,0);
                 if (anz > 0)
@@ -324,7 +328,8 @@ typedef struct {
 } SPEEDRATE;
 
 // AudioRate, TX-Resampler, RX-Resampler/4, bit/symbol, Codec-Rate
-SPEEDRATE sr[11] = {
+#define NUMSPEEDMODES 11
+SPEEDRATE sr[NUMSPEEDMODES] = {
     // BPSK modes
     {48000, 40,10, 1, 1200, 800},
     {48000, 20, 5, 1, 2400, 2000},
@@ -351,6 +356,8 @@ void startModem()
     close_dsp();
     close_rtty();
     speedmode = set_speedmode;
+    if (speedmode < 0 || speedmode >= NUMSPEEDMODES)
+        speedmode = 4;
 
     bitsPerSymbol = sr[speedmode].bpsym;
     constellationSize = (1 << bitsPerSymbol); // QPSK=4, 8PSK=8
@@ -398,12 +405,32 @@ void initVoice()
         float f = 0.0f;
         io_saveStream(&f, 1);    // close recording
         close_voiceproc();
+        close_stream(voice_capidx);
+        close_stream(voice_pbidx);
     }
     else
     {
-        
-        voice_capidx = kmaudio_startCapture(micDeviceName, VOICE_SAMPRATE);
-        voice_pbidx = kmaudio_startPlayback(lsDeviceName, VOICE_SAMPRATE);
+        int srate = VOICE_SAMPRATE;
+
+        // voice always runs with 48000 with one exception:
+        // if it is used for monitoring only and the digital audio
+        // stream runs with 44100, then also the monitoring voice audio
+        // must runs with 44100
+        if (VoiceAudioMode == VOICEMODE_LISTENAUDIOIN && caprate == 44100)
+            srate = 44100;
+
+        voice_capidx = kmaudio_startCapture(micDeviceName, srate);
+        if (voice_capidx == -1)
+        {
+            printf("Voice CAP: cannot open device: %s\n", micDeviceName);
+            return;
+        }
+        voice_pbidx = kmaudio_startPlayback(lsDeviceName, srate);
+        if (voice_pbidx == -1)
+        {
+            printf("Voice PB: cannot open device: %s\n", lsDeviceName);
+            return;
+        }
         init_voiceproc();
     }
 }
@@ -439,11 +466,26 @@ void io_setAudioDevices(uint8_t pbvol, uint8_t capvol, uint8_t announce, uint8_t
     }
 }
 
+uint8_t *getDevList(int* plen)
+{
+    uint8_t* txdata = io_getAudioDevicelist(plen);
+    txdata[0] = 3;  // ID of this UDP message
+
+    txdata[1] = (io_capidx != -1 && devlist[io_capidx].working) ? '1' : '0';
+    txdata[2] = (io_pbidx != -1 && devlist[io_pbidx].working) ? '1' : '0';
+    txdata[3] = (voice_capidx != -1 && devlist[voice_capidx].working) ? '1' : '0';
+    txdata[4] = (voice_pbidx != -1 && devlist[voice_pbidx].working) ? '1' : '0';
+
+    return txdata;
+}
+
 // called from UDP RX thread for Broadcast-search from App
 void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
 {
+
     static uint64_t lastms = 0;  // time of last received BC message
     uint64_t actms = getms();
+
 
     if (len > 0 && pdata[0] == 0x3c)
     {
@@ -462,6 +504,9 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         * 9 ... unused
         * 10 .. 109 ... PB device name
         * 110 .. 209 ... CAP device name
+        * 210 .. 229 ... Callsign
+        * 230 .. 239 ... qthloc
+        * 240 .. 259 ... Name
         */
 
         char rxip[20];
@@ -491,7 +536,7 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
             // App searches for the modem IP, mirror the received messages
             // so the app gets an UDP message with this local IP
             int alen;
-            uint8_t* txdata = io_getAudioDevicelist(&alen);
+            uint8_t* txdata = getDevList(&alen);
             sendUDP(appIP, UdpDataPort_ModemToApp, txdata, alen);
         }
         else
@@ -503,12 +548,23 @@ void bc_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
                 // App searches for the modem IP, mirror the received messages
                 // so the app gets an UDP message with this local IP
                 int alen;
-                uint8_t* txdata = io_getAudioDevicelist(&alen);
+                uint8_t* txdata = getDevList(&alen);
                 sendUDP(appIP, UdpDataPort_ModemToApp, txdata, alen);
             }
             else
                 return;
         }
+
+        memcpy(mycallsign, pdata + 210, sizeof(mycallsign));
+        mycallsign[sizeof(mycallsign) - 1] = 0;
+
+        memcpy(myqthloc, pdata + 230, sizeof(myqthloc));
+        myqthloc[sizeof(myqthloc) - 1] = 0;
+
+        memcpy(myname, pdata + 240, sizeof(myname));
+        myname[sizeof(myname) - 1] = 0;
+
+        //printf("<%s> <%s> <%s>\n", mycallsign, myqthloc, myname);
 
         //printf("%d %d %d %d %d %d %d \n",pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], pdata[6], pdata[7]);
         io_setAudioDevices(pdata[1], pdata[2], pdata[3], pdata[4], pdata[5], (char*)(pdata + 10), (char*)(pdata + 110));
@@ -629,6 +685,18 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         //printf("LS:<%s> MIC:<%s> Mode:%d codec:%d\n", lsDeviceName, micDeviceName, VoiceAudioMode, codec);
 
         init_voice = 1;
+
+        if (!strcmp(micDeviceName, captureDeviceName))
+        {
+            printf("capture device already in use, ignoring: %s\n", micDeviceName);
+            init_voice = 0;
+        }
+
+        if (!strcmp(lsDeviceName, playbackDeviceName))
+        {
+            printf("playback device already in use, ignoring: %s\n", lsDeviceName);
+            init_voice = 0;
+        }
         return;
     }
 
@@ -734,10 +802,11 @@ void appdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
         // one frame has 258 bytes, so we need for 6s: 6* ((caprate/txinterpolfactor) * bitsPerSymbol / 8) /258 + 1 frames
         toGR_sendData(pdata + 2, type, minfo,0);
         int numframespreamble = 6 * ((caprate / txinterpolfactor) * bitsPerSymbol / 8) / 258 + 1;
-        if (type == 1)// BER Test
-            numframespreamble = 1;
+        //if (type == 1)// BER Test
+          //  numframespreamble = 1;
         for (int i = 0; i < numframespreamble; i++)
             toGR_sendData(pdata + 2, type, minfo,1);
+        sendStationInfo();
     }
     else if ((len - 2) < PAYLOADLEN)
     {
@@ -781,9 +850,27 @@ void toGR_sendData(uint8_t* data, int type, int status, int repeat)
     int len = 0;
     uint8_t* txdata = Pack(data, type, status, &len, repeat);
 
-    //showbytestring((char *)"BERtx: ", txdata, len);
+    //showbytestring((char *)"TX: ", txdata, len);
 
     if (txdata != NULL) sendToModulator(txdata, len);
+}
+
+void sendStationInfo()
+{
+    uint8_t payload[PAYLOADLEN];
+    memcpy(payload, mycallsign, 20);
+    memcpy(payload+20, myqthloc, 10);
+    memcpy(payload+30, myname, 20);
+
+    int len = 0;
+    uint8_t* txdata = Pack(payload, 7, 1, &len, 1);
+
+    //showbytestring((char *)"TX Userinfo: ", txdata, len);
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (txdata != NULL) sendToModulator(txdata, len);
+    }
 }
 
 // called by liquid demodulator for received data
@@ -797,6 +884,7 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
     if (pl != NULL)
     {
         // complete frame received
+        //printf("type:%d\n", pl[0]);
         // send payload to app
         uint8_t txpl[PAYLOADLEN + 10 + 1];
         memcpy(txpl + 1, pl, PAYLOADLEN + 10);
@@ -862,7 +950,7 @@ void GRdata_rxdata(uint8_t* pdata, int len, struct sockaddr_in* rxsock)
                 rx_in_sync = 0;
                 if (speedmode < 10)
                 {
-                    printf("no signal detected, reset RX modem\n");
+                    //printf("no signal detected, reset RX modem\n");
                     resetModem();
                 }
                 lasttime = acttm;

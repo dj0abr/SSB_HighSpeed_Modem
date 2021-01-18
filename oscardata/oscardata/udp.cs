@@ -123,8 +123,13 @@ namespace oscardata
                             searchtimeout = 0;
                             // message b contains audio devices and init status
 
-                            //String s = statics.ByteArrayToString(b,0);
-                            String s = statics.ByteArrayToStringUtf8(b, 0);
+                            statics.initAudioStatus = (b[0] == '1') ? 2 : 0;
+                            statics.initAudioStatus |= (b[1] == '1') ? 1 : 0;
+                            statics.initVoiceStatus = (b[2] == '1') ? 2 : 0;
+                            statics.initVoiceStatus |= (b[3] == '1') ? 1 : 0;
+
+                            //String s = statics.ByteArrayToString(b,4);
+                            String s = statics.ByteArrayToStringUtf8(b, 4);
                             String[] sa1 = s.Split(new char[] { '^' });
                             statics.AudioPBdevs = sa1[0].Split(new char[] { '~' });
                             statics.AudioCAPdevs = sa1[1].Split(new char[] { '~' }); 
@@ -143,18 +148,19 @@ namespace oscardata
                         // FFT data
                         if (rxtype == statics.udp_fft)
                         {
-                            statics.PBfifousage = b[0];
-                            statics.CAPfifousage = b[1];
-                            statics.RXlevelDetected = b[2];
-                            statics.RXinSync = b[3];
-                            statics.maxRXlevel = b[4];
-                            statics.maxTXlevel = b[5];
-                            statics.tune_frequency = b[6];
+                            int idx = 0;
+                            statics.PBfifousage = b[idx++];
+                            statics.CAPfifousage = b[idx++];
+                            statics.RXlevelDetected = b[idx++];
+                            statics.RXinSync = b[idx++];
+                            statics.maxRXlevel = b[idx++];
+                            statics.maxTXlevel = b[idx++];
+                            statics.tune_frequency = b[idx++];
                             statics.tune_frequency <<= 8;
-                            statics.tune_frequency += b[7];
+                            statics.tune_frequency += b[idx++];
                             //Console.WriteLine("f:" + statics.tune_frequency);
-                            Byte[] b1 = new byte[b.Length - 6];
-                            Array.Copy(b, 6, b1, 0, b1.Length);
+                            Byte[] b1 = new byte[b.Length - idx];
+                            Array.Copy(b, idx, b1, 0, b1.Length);
                             drawFftBitmap(b1);
                         }
 
