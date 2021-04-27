@@ -121,7 +121,7 @@ void close_capture_stream(int idx)
     }
 }
 
-int kmaudio_startCapture(char* devname, int samprate)
+int kmaudio_startCapture(char* devname, int samprate, char* description)
 {
     printf("Start request for CAP stream:%s\n", devname);
 
@@ -193,6 +193,7 @@ int kmaudio_startCapture(char* devname, int samprate)
     devlist[idx].instream->read_callback = read_callback;
     devlist[idx].instream->overflow_callback = overflow_callback;
     devlist[idx].instream->userdata = &(devlist[idx].index);
+    devlist[idx].instream->name = description;
 
     int err = 0;
     if ((err = soundio_instream_open(devlist[idx].instream))) {

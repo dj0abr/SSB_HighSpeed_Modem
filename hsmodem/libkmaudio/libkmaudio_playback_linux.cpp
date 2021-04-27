@@ -151,7 +151,7 @@ void close_playback_stream(int idx)
     }
 }
 
-int kmaudio_startPlayback(char* devname, int samprate)
+int kmaudio_startPlayback(char* devname, int samprate, char* description)
 {
     printf("Start request for PB stream:%s\n", devname);
     
@@ -223,6 +223,7 @@ int kmaudio_startPlayback(char* devname, int samprate)
     devlist[idx].outstream->write_callback = write_callback;
     devlist[idx].outstream->underflow_callback = underflow_callback;
     devlist[idx].outstream->userdata = &(devlist[idx].index);
+    devlist[idx].outstream->name = description;
 
     int err = 0;
     if ((err = soundio_outstream_open(devlist[idx].outstream))) {

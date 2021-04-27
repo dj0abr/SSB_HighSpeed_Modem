@@ -235,6 +235,7 @@ int io_init_voice(char* lsname, char* micname)
         return 0;
     }
 #endif
+    voice_soundio->app_name = "AMSAT-DL HS Modem";
 
     if (lsname == NULL || micname == NULL || strlen(lsname) < 3 || strlen(micname) < 3)  // no devices defined yet
     {

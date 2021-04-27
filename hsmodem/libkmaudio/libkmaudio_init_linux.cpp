@@ -45,6 +45,7 @@ int kmaudio_init_linux()
         printf("soundio_create: out of memory\n");
         return -1;
     }
+    soundio->app_name = "AMSAT-DL HS Modem";
 
     if ((err = soundio_connect(soundio))) {
         printf("soundio_connect: %s\n", soundio_strerror(err));
