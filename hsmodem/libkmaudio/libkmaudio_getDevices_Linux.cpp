@@ -170,7 +170,6 @@ int scan_devices()
     {
         struct SoundIoDevice* device = soundio_get_input_device(soundio, i);
         if (device == NULL) continue;
-        if (strstr(device->name, "onitor")) continue;
         if (device->probe_error) continue;
 
         didx = getDevlistIndex(device->name, device->id);
@@ -193,7 +192,6 @@ int scan_devices()
     {
         struct SoundIoDevice* device = soundio_get_output_device(soundio, i);
         if (device == NULL) continue;
-        if (strstr(device->name, "onitor")) continue;
         if (device->probe_error) continue;
 
         didx = getDevlistIndex(device->name, device->id);
