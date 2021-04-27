@@ -390,14 +390,14 @@ void startModem()
     }
 
     // int TX audio and modulator
-    io_capidx = kmaudio_startCapture(captureDeviceName, caprate);
+    io_capidx = kmaudio_startCapture(captureDeviceName, caprate, "Modem RX");
     if (io_capidx == -1)
     {
         printf("CAP: cannot open device: %s\n", captureDeviceName);
         return;
     }
     
-    io_pbidx = kmaudio_startPlayback(playbackDeviceName, caprate);
+    io_pbidx = kmaudio_startPlayback(playbackDeviceName, caprate, "Modem TX");
     if (io_pbidx == -1)
     {
         printf("PB: cannot open device: %s\n", playbackDeviceName);
@@ -429,13 +429,13 @@ void initVoice()
         if (VoiceAudioMode == VOICEMODE_LISTENAUDIOIN && caprate == 44100)
             srate = 44100;
 
-        voice_capidx = kmaudio_startCapture(micDeviceName, srate);
+        voice_capidx = kmaudio_startCapture(micDeviceName, srate, "Voice Input");
         if (voice_capidx == -1)
         {
             printf("Voice CAP: cannot open device: %s\n", micDeviceName);
             return;
         }
-        voice_pbidx = kmaudio_startPlayback(lsDeviceName, srate);
+        voice_pbidx = kmaudio_startPlayback(lsDeviceName, srate, "Voice Output");
         if (voice_pbidx == -1)
         {
             printf("Voice PB: cannot open device: %s\n", lsDeviceName);

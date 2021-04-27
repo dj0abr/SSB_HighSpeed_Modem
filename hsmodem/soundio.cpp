@@ -456,6 +456,7 @@ int io_init_sound(char *pbname, char *capname)
         return 0;
     }
 #endif
+    soundio->app_name = "AMSAT-DL HS Modem";
 
     io_readAudioDevices();
     io_init_pipes();
